@@ -1,0 +1,14 @@
+{
+  "name": "ruc-tc",
+  "version": "0.1.0",
+  "description": "read TCFA forecast fomat",
+  "main": "./src/index.js",
+  "author": "minhill",
+  "license": "MIT",
+  "dependencies": {
+    "cheerio": "^1.0.0-rc.3",
+    "dayjs": "^1.8.14",
+    "request": "^2.88.0",
+    "request-promise-native": "^1.0.7"
+  }
+}
