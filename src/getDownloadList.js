@@ -45,7 +45,7 @@ const readFileList = async function(url='https://ruc.noaa.gov/hfip/tceps/2019/20
   for(let href of downloadList){
     let insFlag = href.match(/adeck\.(.*?)\./);// insFlag[1];
     let timeString = href.match(/\d{10}/);
-    console.log(href);
+    // console.log(href);
     // console.log(timeString[0]);
     let utcTime = dayjs.utc(timeString[0],'YYYYMMDDHH');
     if(!insFlag) continue;
@@ -89,6 +89,7 @@ const readFileList = async function(url='https://ruc.noaa.gov/hfip/tceps/2019/20
       let isFileExists = await isExists(filePath);// 文件路径
       if(!isFileExists){
         try{
+          console.log('准备下载'+fiMeta.fileName);
           await downloadFile({ins:fiMeta.ins,url:fiMeta.url,fileName:fiMeta.fileName,time:fiMeta.time,dirPath:dirPath});
         }catch(err){
           console.error('下载文件发生意外'+fiMeta.fileName);
@@ -129,9 +130,9 @@ async function downloadFile({ins='ncep',url='',fileName='adeck.ncep.02E.2019.201
     if(err) console.error(err);
     console.log(`下载${fileName}完毕`);
   });
-  fs.writeFile(path.resolve(dirPath, fileName+'.new.json'),JSON.stringify(tcbul,null,2),(err)=>{// TODO，储存所选
-    if(err) console.error(err);
-  });
+  // fs.writeFile(path.resolve(dirPath, fileName+'.new.json'),JSON.stringify(tcbul,null,2),(err)=>{// TODO，储存所选
+  //   if(err) console.error(err);
+  // });
   await save2DB(tcbul).catch(err=>{throw err});
 }
 
@@ -183,7 +184,7 @@ async function initDB(){
   save2DB = require('./db/util.db').save2DB;
   // return await main();
   let ruleI1 = new schedule.RecurrenceRule();
-  ruleI1.minute = [new schedule.Range(1, 59, 10)];// 1分钟轮询
+  ruleI1.minute = [new schedule.Range(1, 59, 15)];// 15分钟轮询
   let job1 = schedule.scheduleJob(ruleI1, (fireDate)=>{
     // TODO 检测是否连接上mongodb
     console.log('轮询开始'+fireDate.toString());

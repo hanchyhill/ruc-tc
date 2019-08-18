@@ -165,9 +165,9 @@ function trans2mongoFormat(sortList=[]){
   newFormat.controlIndex = controlIndex;
   newFormat.fillStatus = 0;
   if(detTrack) newFormat.detTrack = detTrack[0];
-  if(ensembleTracks.length !== 0 &&controlIndex !== -1) newFormat.fillStatus = 3;
-  if(ensembleTracks.length == 0 &&controlIndex !== -1) newFormat.fillStatus = 1;
-  if(ensembleTracks.length !== 0 &&controlIndex == -1) newFormat.fillStatus = 2;
+  if(ensembleTracks.length !== 0 &&detIndex !== -1) newFormat.fillStatus = 3;
+  if(ensembleTracks.length == 0 &&detIndex !== -1) newFormat.fillStatus = 1;
+  if(ensembleTracks.length !== 0 &&detIndex == -1) newFormat.fillStatus = 2;
   return newFormat;
 }
 

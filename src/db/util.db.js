@@ -25,7 +25,7 @@ async function save2DB(fcData={tcID:''}){
         findTC.detLoc = fcData.loc;
         findTC.fillStatus += 1;
       }else{
-        console.log('意外的fillStatus'+findTC.fillStatus+' '+fcData.fillStatus);
+        console.log('意外的fillStatus,旧:'+findTC.fillStatus+',新: '+fcData.fillStatus);
         return;
       }
       await findTC.save()
@@ -40,7 +40,17 @@ async function save2DB(fcData={tcID:''}){
     }
     
   }else{
-    let cyclone = new Cyclone(fcData);
+    let cyclone;
+    if(fcData.fillStatus==1){
+      //console.log(fcData.tracks);
+      fcData.detTrack = fcData.tracks[0];
+      fcData.detLoc = fcData.loc;
+      delete fcData.tracks;
+      delete fcData.loc;
+      cyclone = new Cyclone(fcData);
+    }else{
+      cyclone = new Cyclone(fcData);
+    }
     await cyclone.save()
     .then(()=>{
       console.log('储存完成'+fcData.tcID);
