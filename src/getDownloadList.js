@@ -1,3 +1,5 @@
+// TODO: 确定时间,跨年问题
+// TODO: 是否需要并发下载?
 const rp = require('request-promise-native');
 // const tough = require('tough-cookie');
 const cheerio = require('cheerio');
@@ -8,7 +10,10 @@ const utc = require('dayjs/plugin/utc');
 const toArray = require('dayjs/plugin/toArray');
 const resolveTCFA = require('./lib/resolveTCFA.js').resolveTCFA;
 const {pMakeDir,isExists,writeFile} = require('./lib/util.js');
+const {connect,initSchemas} = require('./db/initDB.js');
+const schedule = require('node-schedule');
 
+let save2DB;
 dayjs.extend(toArray);
 const customParseFormat = require('dayjs/plugin/customParseFormat');
 dayjs.extend(utc);
@@ -18,7 +23,7 @@ const readFileList = async function(url='https://ruc.noaa.gov/hfip/tceps/2019/20
   console.log('读取列表'+url);
   let reqConfig = {
     uri:url,
-    timeout:30*1000
+    timeout:40*1000
   }
   let htmlBody;
   try{
@@ -71,7 +76,7 @@ const readFileList = async function(url='https://ruc.noaa.gov/hfip/tceps/2019/20
       continue;
     }
   }
-  listInfo = listInfo.filter(meta=>meta.ins==='ncep'||meta.ins==='ecmwf');// TODO 增加UKMO机构报文
+  listInfo = listInfo.filter(meta=>meta.ins==='ncep'||meta.ins==='ecmwf'||meta.ins==='ukmo');// TODO 增加UKMO机构报文
   // let need2DownlodList = [];
 
   // console.log(listInfo);
@@ -86,7 +91,7 @@ const readFileList = async function(url='https://ruc.noaa.gov/hfip/tceps/2019/20
         try{
           await downloadFile({ins:fiMeta.ins,url:fiMeta.url,fileName:fiMeta.fileName,time:fiMeta.time,dirPath:dirPath});
         }catch(err){
-          console.err('下载文件发生意外'+fiMeta.fileName);
+          console.error('下载文件发生意外'+fiMeta.fileName);
           throw err;
         }
       }else{
@@ -119,14 +124,15 @@ async function downloadFile({ins='ncep',url='',fileName='adeck.ncep.02E.2019.201
   }
   const filePath = path.resolve(dirPath, fileName);
   // console.log(filePath);
-  let tcbul = resolveTCFA(htmlbody, ins);// TODO，1.过滤重复的确定性预报，2.整合成我们自己的集合预报格式
+  let tcbul = resolveTCFA(htmlbody, ins);
   fs.writeFile(filePath,htmlbody,(err)=>{// TODO，储存所选
     if(err) console.error(err);
     console.log(`下载${fileName}完毕`);
   });
-  fs.writeFile(path.resolve(dirPath, fileName+'.json'),JSON.stringify(tcbul,null,2),(err)=>{// TODO，储存所选
+  fs.writeFile(path.resolve(dirPath, fileName+'.new.json'),JSON.stringify(tcbul,null,2),(err)=>{// TODO，储存所选
     if(err) console.error(err);
   });
+  await save2DB(tcbul).catch(err=>{throw err});
 }
 
 const prepareDownload = async ()=>{
@@ -135,7 +141,7 @@ const prepareDownload = async ()=>{
   let dirUrl = `https://ruc.noaa.gov/hfip/tceps/${cYear}/?C=M;O=A`;
   let rpOption = {
     uri:dirUrl,
-    timeout:30*1000,
+    timeout:40*1000,
   }
   let htmlBody;
   try{
@@ -165,11 +171,40 @@ const prepareDownload = async ()=>{
   //console.log(leastLinks);
   //https://ruc.noaa.gov/hfip/tceps/2019/
 
-  // TODO: 确定时间
+  // TODO: 确定时间,跨年问题
 }
 
-prepareDownload()
-.catch(err=>{
-  console.error(err);
-})
+/**
+ * 初始化
+ */
+async function initDB(){
+  await connect();
+  initSchemas();
+  save2DB = require('./db/util.db').save2DB;
+  // return await main();
+  let ruleI1 = new schedule.RecurrenceRule();
+  ruleI1.minute = [new schedule.Range(1, 59, 10)];// 1分钟轮询
+  let job1 = schedule.scheduleJob(ruleI1, (fireDate)=>{
+    // TODO 检测是否连接上mongodb
+    console.log('轮询开始'+fireDate.toString());
+    prepareDownload()
+      .then(()=>{
+        console.log('轮询完毕');
+      })
+      .catch(err=>{
+      console.error(err);
+      });
+  });
+  return prepareDownload()
+    .catch(err=>{
+    console.error(err);
+    });
+}
+
+
+
+initDB()
+  .catch(err=>{
+    console.error(err);
+  })
 

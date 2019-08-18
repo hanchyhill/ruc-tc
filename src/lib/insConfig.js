@@ -32,7 +32,7 @@ let ecConfig = {
     },
     
   ],
-  ins:'EC-N',
+  ins:'EC-R',
   detNameList:['EMDT','ECMO','ECMF'],
 }
 let ncepConfig = {
@@ -81,7 +81,7 @@ let ncepConfig = {
       }
     },
   ],
-  ins:'NCEP-N',
+  ins:'NCEP-R',
   detNameList:['TGFS2','AVNO','AVNI'],
 }
 
@@ -124,6 +124,12 @@ let ukmoConfig = {
             "ensembleNumber": -3,
             oriType:str,
           }
+        }else if(str=='UKMI'){
+          return {
+            type:"determineForecast",
+            "ensembleNumber": -4,
+            oriType:str,
+          }
         }
         else{
           return false;
@@ -131,7 +137,7 @@ let ukmoConfig = {
       }
     },
   ],
-  ins:'UKMO',
+  ins:'UKMO-R',
   detNameList:['TUKM2','UEDET','UKM'],
 }
 
@@ -140,6 +146,8 @@ function selectConfig(ins='ecmwf'){
     return ecConfig;
   } else if(ins==='ncep') {
     return ncepConfig;
+  }else if(ins==='ukmo') {
+    return ukmoConfig;
   }else{
     throw new TypeError('not valid ins');
   }

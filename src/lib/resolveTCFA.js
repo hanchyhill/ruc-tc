@@ -76,7 +76,7 @@ function transStr(str='',ins='ecmwf'){
   let allRecords = newLines.map(line=>{
     let basinshort = line[0];
     let number = line[1];
-    let time = dayjs.utc(line[2],'YYYYMMDDHH').format();
+    let time = dayjs.utc(line[2],'YYYYMMDDHH').toDate();
     let type = line[4];
     let step = Number(line[5]);
     let lat = transLatLon(line[6]);
@@ -109,6 +109,7 @@ function transStr(str='',ins='ecmwf'){
         {
           oriType: cType,
           trackList: [line],
+          ins,
         }
       );
       typeList.push(cType);
@@ -127,7 +128,73 @@ function transStr(str='',ins='ecmwf'){
   });// 去除无法识别的类型
   // console.log(sortList);
   sortList = trimDuplicateDetTrack(sortList);
-  return sortList;
+  return trans2mongoFormat(sortList);
 }
+
+/**
+ * 转换为数据库所用格式
+ * @param {Array} sortList 
+ */
+function trans2mongoFormat(sortList=[]){
+  if(sortList.length===0){
+    console.log('数据为空');
+    return [];
+  }
+  let fc0 = sortList[0];// 第一个预报
+  let newFormat = extractMetaInfo(fc0);
+  // newFormat.controlIndex = 0;
+  // newFormat.detTrack = {};
+  let newTracks = sortList.map(fc=>{
+    let track = fc.trackList.map(track=>[track.step,[track.lon,track.lat],track.pres,track.wind]);
+    let fcType = fc.type.type;
+    let ensembleNumber = fc.type.ensembleNumber;
+    return {
+      fcType,
+      ensembleNumber,
+      track,
+    }
+  });
+  let detIndex = newTracks.findIndex(v=>v.fcType==='determineForecast');
+  let controlIndex = newTracks.findIndex(v=>v.ensembleNumber===0);
+  let ensembleTracks = newTracks;
+  let detTrack = null;
+  if(detIndex!==-1){
+    detTrack = ensembleTracks.splice(detIndex,1);
+  }
+  newFormat.tracks = ensembleTracks;
+  newFormat.controlIndex = controlIndex;
+  newFormat.fillStatus = 0;
+  if(detTrack) newFormat.detTrack = detTrack[0];
+  if(ensembleTracks.length !== 0 &&controlIndex !== -1) newFormat.fillStatus = 3;
+  if(ensembleTracks.length == 0 &&controlIndex !== -1) newFormat.fillStatus = 1;
+  if(ensembleTracks.length !== 0 &&controlIndex == -1) newFormat.fillStatus = 2;
+  return newFormat;
+}
+
+function extractMetaInfo(fcItem={trackList:[{basinshort:''}],type:{},ins:''}){
+  let tr0 = fcItem.trackList[0];
+  let basinShort2 = tr0.basinshort;
+  let cycloneNumber = tr0.number;
+  let cycloneName = tr0.number+tr0.basinshort;
+  let ins = fcItem.ins+'-R';
+  let initTime = tr0.time;
+  let tcID = `${dayjs.utc(initTime).format('YYYYMMDDHH')}_${cycloneName}_${cycloneNumber}_${ins}`;
+  return {
+    basinShort2,
+    cycloneName,
+    cycloneNumber,
+    ins,
+    initTime,
+    tcID,
+  }
+  // let cycloneName = 
+  //  "basinShort2" : "SP",
+  // "cycloneNumber" : "15",
+  // "cycloneName" : "Oma",
+  // "ins" : "NCEP",
+  // "initTime" : "2019-02-25T00:00:00.000Z",
+}
+
+
 
 exports.resolveTCFA = transStr;
