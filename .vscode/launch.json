@@ -13,6 +13,13 @@
     {
       "type": "node",
       "request": "launch",
+      "name": "emcDownload",
+      "cwd": "${workspaceFolder}\\src",
+      "program": "${workspaceFolder}\\src\\emcDownload.js"
+    },
+    {
+      "type": "node",
+      "request": "launch",
       "name": "index tset",
       "program": "${workspaceFolder}\\src\\index.js"
     }

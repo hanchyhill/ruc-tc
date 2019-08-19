@@ -1,5 +1,7 @@
 *.pptx
-dist*.zip
+*.zip
+*.vsocde
+.vscode/
 *.bak
 *private*
 *private

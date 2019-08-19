@@ -126,6 +126,7 @@ async function downloadFile({ins='ncep',url='',fileName='adeck.ncep.02E.2019.201
   const filePath = path.resolve(dirPath, fileName);
   // console.log(filePath);
   let tcbul = resolveTCFA(htmlbody, ins);
+  if(tcbul===false) return;//数据为空
   fs.writeFile(filePath,htmlbody,(err)=>{// TODO，储存所选
     if(err) console.error(err);
     console.log(`下载${fileName}完毕`);

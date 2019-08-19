@@ -120,7 +120,8 @@ function transStr(str='',ins='ecmwf'){
   sortList.forEach(v=>v.type = setTcType(v.oriType,selectConfig(ins)));//
   sortList = sortList.filter(v=>{
     if(v.type===false){
-      console.error('无法识别的类型');
+      console.error('无法识别的类型:');
+      console.error(v);
       return false;
     }else{
       return true;
@@ -138,7 +139,7 @@ function transStr(str='',ins='ecmwf'){
 function trans2mongoFormat(sortList=[]){
   if(sortList.length===0){
     console.log('数据为空');
-    return [];
+    return false;
   }
   let fc0 = sortList[0];// 第一个预报
   let newFormat = extractMetaInfo(fc0);
