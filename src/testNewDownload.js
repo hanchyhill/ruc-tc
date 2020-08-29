@@ -5,7 +5,7 @@ const dayjs = require('dayjs');
 const utc = require('dayjs/plugin/utc');
 const toArray = require('dayjs/plugin/toArray');
 const {resolveTCFA, trans2mongoFormat} = require('./lib/newResolveTCFA.js');
-const {pMakeDir,isExists,writeFile} = require('./lib/util.js');
+const {pMakeDir,isExists,writeFile,myDebug} = require('./lib/util.js');
 const got = require('got');
 // const {connect,initSchemas} = require('./db/initDB.js');
 const schedule = require('node-schedule');
@@ -13,6 +13,8 @@ dayjs.extend(toArray);
 const customParseFormat = require('dayjs/plugin/customParseFormat');
 dayjs.extend(utc);
 dayjs.extend(customParseFormat);
+
+// TODO 判断文件是否存在
 
 // ######配置########
 let modelConfig = {
@@ -65,17 +67,19 @@ let stausConfig = {};
 /**
  * 根据当前时间判断需要下载哪个时次的文件
  */
-function which2Download(){
+function which2Download(config){
   const currentTimeUTC = dayjs.utc();
   const currentHour = currentTimeUTC.hour();
   const index = Number.parseInt((currentHour-2)/6);
-  const timeList = [index, index-1, index-2,index-3].map(i=>currentTimeUTC.hour(i*6));
+  let timeList = [index, index-1, index-2,index-3].map(i=>currentTimeUTC.hour(i*6));
+  timeList = timeList.filter(v=>v.hour()%config.timeInterval == 0);
   const formatTimeList = timeList.map(time=>time.format('YYYYMMDDHH'));
+  
   // TODO filter被6整除和12整除
   console.log(formatTimeList);
-  const urlList = create_ATCF_URL(formatTimeList[2], suffixList=modelConfig.ncep.suffix);
+  const multiTimeUrlList = formatTimeList.map(time=>create_ATCF_URL(time, suffixList=config.suffix));
   // downloadData(urlList[0]);
-  return urlList;
+  return multiTimeUrlList;
 }
 
 /**
@@ -132,8 +136,11 @@ async function downloadData(url=''){
 }
 
 async function mainDownload(){
-  let urlList = which2Download();
-  console.dir(urlList);
+  let iConfig = modelConfig.cmc;
+  let multiTimeUrlList = which2Download(iConfig);
+  let urlList = multiTimeUrlList[multiTimeUrlList.length - 1];
+  myDebug(urlList);
+  // TODO find exist file;
   let rpList = await Promise.all(urlList.map((url)=>downloadData(url)))
     .catch(err=>{
       throw err;
@@ -141,7 +148,7 @@ async function mainDownload(){
   let tcList = [];
   for(let rp of rpList){
     if(rp.data){
-      let recordList = resolveTCFA(rp.data, 'ncep');
+      let recordList = resolveTCFA(rp.data, iConfig.ins);
       tcList.push(recordList);
       let url = rp.url;
       let matchStr = url.match(/\d{10}.*?$/);
@@ -149,7 +156,7 @@ async function mainDownload(){
         .catch(err=>{console.trace(err)});
     }
   }
-  if(arrangeTC.length===0){
+  if(tcList.length===0){
     console.log('数据为空');
     return;
   }
