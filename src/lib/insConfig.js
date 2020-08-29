@@ -46,6 +46,7 @@ const ncepConfig = {
   ],
   ins:'NCEP-R',
   detNameList:['TGFS2','AVNO','AVNI'],
+  ensNumber:21,
 }
 
 let ukmoConfig = {
@@ -102,6 +103,7 @@ let ukmoConfig = {
   ],
   ins:'UKMO-R',
   detNameList:['TUKM2','UEDET','UKM'],
+  ensNumber:36,
 }
 
 const cmcConfig = {
@@ -127,13 +129,13 @@ const cmcConfig = {
       filter(str='CMC'){
         let detList = ['CMC','CMCI','CMC2'];
         let meanList = ['CEMI','CEM2'];
-        if(detList.includes(det=>det===str.toUpperCase())){
+        if(detList.includes(str.toUpperCase())){
           return {
             type:"determineForecast",
             "ensembleNumber": -1,
             oriType:str,
           }
-        }else if(meanList.includes(det=>det===str.toUpperCase())){
+        }else if(meanList.includes(str.toUpperCase())){
           return {
             type:"ensembleMean",
             "ensembleNumber": -10,
@@ -147,6 +149,7 @@ const cmcConfig = {
   ],
   ins:'CMC-R',
   detNameList:['CMC','CMCI','CMC2'],
+  ensNumber:21,
 };
 
 const fnmocConfig = {
@@ -177,7 +180,7 @@ const fnmocConfig = {
       type:'determineForecast',
       filter(str='NGX'){
         let detList = ['NGX','NGXI','NGX2','NGPS','NGPI','NGP2'];
-        if(detList.includes(det=>det===str.toUpperCase())){
+        if(detList.includes(str.toUpperCase())){
           return {
             type:"determineForecast",
             "ensembleNumber": -1,
@@ -192,6 +195,7 @@ const fnmocConfig = {
   ],
   ins:'FNMOC-R',
   detNameList:['NGX','NGXI','NGX2','NGPS','NGPI','NGP2'],
+  ensNumber:20,
 };
 
 let ecConfig = {
@@ -234,6 +238,7 @@ let ecConfig = {
   ],
   ins:'EC-R',
   detNameList:['EMDT','ECMO','ECMF'],
+  ensNumber:51,
 };
 
 function selectConfig(ins='ecmwf'){
