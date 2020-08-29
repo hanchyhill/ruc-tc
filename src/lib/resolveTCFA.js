@@ -98,6 +98,7 @@ function transStr(str='',ins='ecmwf'){
 
   let typeList = [];
   let sortList = [];
+  // 分组
   for(let line of allRecords){
     let cType = line.type; // current type
     const doesInclude = typeList.includes(cType);
