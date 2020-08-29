@@ -110,7 +110,7 @@ function transStr(str='',ins='ecmwf'){
     }
   });// 去除无法识别的类型
   // console.log(sortList);
-  sortList = trimDuplicateDetTrack(sortList);
+  // sortList = trimDuplicateDetTrack(sortList);
   return sortList;
   // return trans2mongoFormat(sortList);
 }
