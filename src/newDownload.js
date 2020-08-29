@@ -19,7 +19,7 @@ dayjs.extend(customParseFormat);
 // ######配置########
 let modelConfig = {
   ncep:{
-    ins:'necp',
+    ins:'ncep',
     model:'GEFS',
     detModel:'GFS',
     suffix:['ac00', ...generateRange(init=1, length=20, padding=2, prefix='ap')],
@@ -76,7 +76,6 @@ function which2Download(config={timeInterval:12, ins:'', suffix:[]}){
   timeList = timeList.filter(v=>v.hour()%config.timeInterval == 0);
   const formatTimeList = timeList.map(time=>time.format('YYYYMMDDHH'));
   
-  // TODO filter被6整除和12整除
   console.log(formatTimeList);
   const multiTimeUrlList = formatTimeList.map(time=>create_ATCF_URL(time, suffixList=config.suffix));
   // downloadData(urlList[0]);
@@ -132,11 +131,12 @@ async function downloadData(url=''){
     }
   }catch(err){
     if(err.response.statusCode === 404){
-      myDebug('File not Found: '+url);
-      return {
-        error: true,
-        errorCode: 404,
-      }
+      myDebug('File not Found 404: '+url);
+      let error404 = new Error('File not Found 404: '+url);
+      error404.error = true;
+      error404.errorCode = 404;
+      throw error404;
+      
     } // 还没有数据，终止
     else{
       throw err;
@@ -162,51 +162,114 @@ async function write_TCFA_file(fileName, data){
   writeFile(filePath, data);
 }
 
-async function mainDownload(){
-  let iConfig = modelConfig.ukmo;
+/**
+ * 下载主函数
+ * @param {String} model 机构/模式名称
+ */
+async function mainDownload(model='ncep'){
+  myDebug(model);
+  let iConfig = modelConfig[model];
   let multiTimeUrlList = which2Download(iConfig);
-  let urlList = multiTimeUrlList[multiTimeUrlList.length - 1];
+  // let selectedList = multiTimeUrlList[multiTimeUrlList.length - 1];
   // urlList = urlList.slice(0,2);
-  myDebug(urlList);
-  // TODO find exist file;
-  let rpList = await Promise.all(urlList.map((url)=>downloadData(url)))
-    .catch(err=>{
-      throw err;
-    });
-  let tcList = [];
-  for(let rp of rpList){
-    if(rp.data){
-      let recordList = resolveTCFA(rp.data, iConfig.ins);
-      tcList.push(recordList);
-      let url = rp.url;
-      let matchStr = url.match(/\d{10}.*?$/);
-      write_TCFA_file(matchStr[0]+'.txt', rp.data)
-        .catch(err=>{console.trace(err)});
+  for(let selectedList of multiTimeUrlList){
+    let urlList = [];
+    for(let url of selectedList){
+      const matchStr = url.match(/\d{10}.*?$/);
+      const filePath = path.resolve(__dirname, './../../data/cyclone/ruc/',matchStr[0]+'.txt');
+      const isFileExists = await isExists(filePath);
+      if(!isFileExists){
+        urlList.push(url);
+      }
+    };
+    
+    if(urlList.length===0){
+      myDebug('无需下载');
+      continue;
+    }else{
+      urlList = selectedList;// 不完整的需要全部重新下载
     }
-  }
-  if(tcList.length===0){
-    console.log('数据为空');
-    return;
-  }
-  let arrangeTC = mergeTCbyID(tcList);
-  let mgTClist = [];
-  for(let tc of arrangeTC){
-    tc = trimDuplicateDetTrack(tc);
-    const mgTC = trans2mongoFormat(tc);
-    mgTClist.push(mgTC);
-    const tcID = mgTC.tcID;
-    const matchTimeStr = tcID.match(/\d{10}/);
-    if(matchTimeStr){
-      const filePath = `./${matchTimeStr[0]}/${tcID}.json`;
-      write_TCFA_file(filePath, JSON.stringify(mgTC,null,2))
-        .catch(err=>{
-          console.trace(err)
-        });
+    myDebug(urlList[0]);
+    let rpList;
+    try{
+      rpList = await Promise.all(urlList.map((url)=>downloadData(url)))
+    }catch(err){
+      if(err.errorCode === 404){
+        myDebug('其中一个成员404，跳过本时次');
+        continue;
+      }else{
+        throw err;
+      }
     }
-  };
-  return mgTClist;
+
+    
+    let tcList = [];
+    for(let rp of rpList){
+      if(rp.data){
+        let recordList = resolveTCFA(rp.data, iConfig.ins);
+        tcList.push(recordList);
+        let url = rp.url;
+        let matchStr = url.match(/\d{10}.*?$/);
+        write_TCFA_file(matchStr[0]+'.txt', rp.data)
+          .catch(err=>{console.trace(err)});
+      }
+    }
+    if(tcList.length===0){
+      console.log('数据为空');
+      continue;
+    }
+    let arrangeTC = mergeTCbyID(tcList);
+    let mgTClist = [];
+    for(let tc of arrangeTC){
+      tc = trimDuplicateDetTrack(tc);
+      const mgTC = trans2mongoFormat(tc);
+      mgTClist.push(mgTC);
+      const tcID = mgTC.tcID;
+      const matchTimeStr = tcID.match(/\d{10}/);
+      if(matchTimeStr){
+        const filePath = `./${matchTimeStr[0]}/${tcID}.json`;
+        write_TCFA_file(filePath, JSON.stringify(mgTC,null,2))
+          .catch(err=>{
+            console.trace(err)
+          });
+      }
+    };
+  }
+
+  // return mgTClist;
 }
 
-mainDownload().catch(err=>{
+/**
+ * 多个机构下载
+ */
+async function mutiDownload(){
+  const modelList = ['ncep','cmc','ecmwf','fnmoc','ukmo'];
+  for(let model of modelList){
+    await mainDownload(model)
+      .catch(err=>{throw err});
+  }
+}
+
+async function initDB(){
+  let ruleI1 = new schedule.RecurrenceRule();
+  ruleI1.minute = [new schedule.Range(1, 59, 20)];// 15分钟轮询
+  let job1 = schedule.scheduleJob(ruleI1, (fireDate)=>{
+    // TODO 检测是否连接上mongodb
+    console.log('轮询开始'+fireDate.toString());
+    mutiDownload()
+      .then(()=>{
+        console.log('轮询完毕');
+      })
+      .catch(err=>{
+      console.error(err);
+      });
+  });
+  return mutiDownload()
+    .catch(err=>{
+    console.error(err);
+    });
+}
+
+initDB().catch(err=>{
   console.trace(err);
 })
