@@ -1,41 +1,4 @@
-let ecConfig = {
-  typeList : [
-    {
-      type:"ensembleForecast",
-      filter(str='EM01'){
-        const reg =  /.*?(\d{2})/;
-        const result = str.match(reg);// Array ["EM01", "01"]
-        if(result){
-          return {
-            type:"ensembleForecast",
-            ensembleNumber: Number(result[1]),
-            oriType:str,
-          }
-        }else{
-          return false;
-        }
-      },
-    },
-    {
-      type:'determineForecast',
-      filter(str='EMDT'){
-        if(str=='EMDT'||str=='ECMO'||str=='ECMF'){
-          return {
-            type:"determineForecast",
-            ensembleNumber: -1,
-            oriType:str,
-          }
-        }else{
-          return false;
-        }
-      }
-    },
-    
-  ],
-  ins:'EC-R',
-  detNameList:['EMDT','ECMO','ECMF'],
-}
-let ncepConfig = {
+const ncepConfig = {
   typeList : [
     {
       type:"ensembleForecast",
@@ -56,7 +19,7 @@ let ncepConfig = {
     {
       type:'determineForecast',
       filter(str='TGFS2'){
-        if('TGFS2'){
+        if(str=='TGFS2'){
           return {
             type:"determineForecast",
             "ensembleNumber": -1,
@@ -89,7 +52,7 @@ let ukmoConfig = {
   typeList : [
     {
       type:"ensembleForecast",
-      filter(str='UEP35'){
+      filter(str='UK35'){// UEP35
         const reg =  /.*?(\d{2})/;
         const result = str.match(reg);// Array ["EM01", "01"]
         if(result){
@@ -141,6 +104,138 @@ let ukmoConfig = {
   detNameList:['TUKM2','UEDET','UKM'],
 }
 
+const cmcConfig = {
+  typeList : [
+    {
+      type:"ensembleForecast",
+      filter(str='AP01'){
+        const reg =  /.*?(\d{2})/;
+        const result = str.match(reg);// Array ["EM01", "01"]
+        if(result){
+          return {
+            type:"ensembleForecast",
+            ensembleNumber: Number(result[1]),
+            oriType:str,
+          }
+        }else{
+          return false;
+        }
+      },
+    },
+    {
+      type:'determineForecast',
+      filter(str='CMC'){
+        let detList = ['CMC','CMCI','CMC2'];
+        let meanList = ['CEMI','CEM2'];
+        if(detList.includes(det=>det===str.toUpperCase())){
+          return {
+            type:"determineForecast",
+            "ensembleNumber": -1,
+            oriType:str,
+          }
+        }else if(meanList.includes(det=>det===str.toUpperCase())){
+          return {
+            type:"ensembleMean",
+            "ensembleNumber": -10,
+            oriType:str,
+          }
+        }else{
+          return false;
+        }
+      }
+    },
+  ],
+  ins:'CMC-R',
+  detNameList:['CMC','CMCI','CMC2'],
+};
+
+const fnmocConfig = {
+  typeList : [
+    {
+      type:"ensembleForecast",
+      filter(str='NP01'){
+        const reg =  /.*?(\d{2})/;
+        const result = str.match(reg);// Array ["EM01", "01"]
+        if(result){
+          return {
+            type:"ensembleForecast",
+            ensembleNumber: Number(result[1]),
+            oriType:str,
+          }
+        }else if(meanList.includes(det=>det===str.toUpperCase())){
+          return {
+            type:"ensembleMean",
+            "ensembleNumber": -10,
+            oriType:str,
+          }
+        }else{
+          return false;
+        }
+      },
+    },
+    {
+      type:'determineForecast',
+      filter(str='NGX'){
+        let detList = ['NGX','NGXI','NGX2','NGPS','NGPI','NGP2'];
+        if(detList.includes(det=>det===str.toUpperCase())){
+          return {
+            type:"determineForecast",
+            "ensembleNumber": -1,
+            oriType:str,
+          }
+        }
+        else{
+          return false;
+        }
+      }
+    },
+  ],
+  ins:'FNMOC-R',
+  detNameList:['NGX','NGXI','NGX2','NGPS','NGPI','NGP2'],
+};
+
+let ecConfig = {
+  typeList : [
+    {
+      type:"ensembleForecast",
+      filter(str='EM01'){
+        const reg =  /.*?(\d{2})/;
+        const result = str.match(reg);// Array ["EM01", "01"]
+        if(result){
+          let ensNumer = Number(result[1]);
+          if(str.toLowerCase().startsWith('ep'){
+            ensNumer = ensNumer + 25;
+          }
+          return {
+            type:"ensembleForecast",
+            ensembleNumber: ensNumer,
+            oriType:str,
+          }
+        }else{
+          return false;
+        }
+      },
+    },
+    {
+      type:'determineForecast',
+      filter(str='EMDT'){
+        if(str=='EMDT'||str=='ECMO'||str=='ECMF'){
+          return {
+            type:"determineForecast",
+            ensembleNumber: -1,
+            oriType:str,
+          }
+        }else{
+          return false;
+        }
+      }
+    },
+    
+  ],
+  ins:'EC-R',
+  detNameList:['EMDT','ECMO','ECMF'],
+};
+
 function selectConfig(ins='ecmwf'){
   if (ins==='ecmwf') {
     return ecConfig;
@@ -148,6 +243,10 @@ function selectConfig(ins='ecmwf'){
     return ncepConfig;
   }else if(ins==='ukmo') {
     return ukmoConfig;
+  }else if(ins==='cmc') {
+    return cmcConfig;
+  }else if(ins==='fnmoc') {
+    return fnmocConfig;
   }else{
     throw new TypeError('not valid ins');
   }
