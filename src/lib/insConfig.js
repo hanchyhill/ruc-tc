@@ -203,7 +203,7 @@ let ecConfig = {
         const result = str.match(reg);// Array ["EM01", "01"]
         if(result){
           let ensNumer = Number(result[1]);
-          if(str.toLowerCase().startsWith('ep'){
+          if(str.toLowerCase().startsWith('ep')){
             ensNumer = ensNumer + 25;
           }
           return {
