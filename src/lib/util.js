@@ -28,7 +28,10 @@ function mkdirsCall(dirname, callback) {
  */
 const pMakeDir = (dirname)=>{
   return new Promise((resolve,reject)=>{
-    mkdirsCall(dirname,(err)=>err instanceof Error?reject(err):resolve('success'));
+    mkdirsCall(dirname,
+      (err)=>{
+        err instanceof Error&&err.code!=='EEXIST'?reject(err):resolve('success');
+      });
   });
 }
 
