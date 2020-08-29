@@ -27,5 +27,7 @@ remote-img/*
 *.pdf
 yarn.lock
 yarn-error.log
+*.ppt
+
 
 
