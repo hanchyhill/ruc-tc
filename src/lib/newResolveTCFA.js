@@ -47,6 +47,10 @@ function trimDuplicateTime(trackList=[{step:0}]){
   return newTrack;
 }
 
+/**
+ * 去除重复确定性预报
+ * @param {Array} list tc 列表
+ */
 function trimDuplicateDetTrack(list=[]){
   let newList = [];
   let isDetExist = false;
@@ -215,4 +219,5 @@ function groupRecord(allRecords=[]){
 module.exports = {
   resolveTCFA: transStr,
   trans2mongoFormat,
+  trimDuplicateDetTrack,
 };
