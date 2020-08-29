@@ -2,6 +2,7 @@
 *.zip
 *.vsocde
 .vscode/
+docs/
 *.bak
 *private*
 *private
