@@ -1,6 +1,6 @@
 {
   "name"        : "ruc-TCFA",  // 应用名称
-  "script"      : "./getDownloadList.js",  // 实际启动脚本
+  "script"      : "./newDownload.js",  // 实际启动脚本
   "cwd"         : "./src/",  // 当前工作路径
   "watch": [  // 监控变化的目录，一旦变化，自动重启
     "."
