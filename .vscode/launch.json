@@ -7,6 +7,12 @@
     {
       "type": "node",
       "request": "launch",
+      "name": "newDownload",
+      "program": "${workspaceFolder}\\src\\newDownload.js"
+    },
+    {
+      "type": "node",
+      "request": "launch",
       "name": "getDownloadList",
       "program": "${workspaceFolder}\\src\\getDownloadList.js"
     },
