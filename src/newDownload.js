@@ -7,7 +7,7 @@ const toArray = require('dayjs/plugin/toArray');
 const {resolveTCFA, trans2mongoFormat, trimDuplicateDetTrack} = require('./lib/newResolveTCFA.js');
 const {pMakeDir,isExists,writeFile,myDebug} = require('./lib/util.js');
 const got = require('got');
-// const {connect,initSchemas} = require('./db/initDB.js');
+const {connect,initSchemas} = require('./db/initDB.js');
 const schedule = require('node-schedule');
 dayjs.extend(toArray);
 const customParseFormat = require('dayjs/plugin/customParseFormat');
@@ -62,6 +62,8 @@ let modelConfig = {
 }
 
 let stausConfig = {};
+
+let save2DB;
 // ##############
 
 /**
@@ -118,26 +120,37 @@ function generateRange(init=0, length = 10, padding = 2 , prefix, suffix){
   return range;
 }
 
-async function downloadData(url=''){
+/**
+ * 
+ * @param {Object} pGot got实例
+ */
+async function downloadData(pGot){
   // console.log(url);
+  if(!pGot) throw new TypeError('错误的参数pGot: ' + pGot);
   try{
-    const response = await got(url);
+    const response = await pGot;
     // console.log(response.body);
     // let tcbul = resolveTCFA(response.body, 'ncep');
-    myDebug('已完成: ' + url);
+    myDebug('已完成: ' + response.url);
     return {
       data: response.body,
-      url:url,
+      url: response.url,
     }
   }catch(err){
-    if(err.response.statusCode === 404){
-      myDebug('File not Found 404: '+url);
-      let error404 = new Error('File not Found 404: '+url);
-      error404.error = true;
-      error404.errorCode = 404;
-      throw error404;
-      
-    } // 还没有数据，终止
+    if(err.response.statusCode === 404){ // 还没有数据，终止
+      myDebug('File not Found 404: '+ err.response.url);
+      err.message = 'File not Found 404: '+ err.response.url;
+      err.error = true;
+      err.errorCode = 404;
+      throw err;
+    }else if(pGot.isCanceled){
+      myDebug('请求被取消'+pGot);
+      return {
+        error: true,
+        errorCode: 404,
+        isCanceled: true,
+      }
+    }
     else{
       throw err;
     }
@@ -184,20 +197,24 @@ async function mainDownload(model='ncep'){
     };
     
     if(urlList.length===0){
-      myDebug('无需下载');
+      myDebug('本地文件已存在无需下载');
       continue;
     }else{
       urlList = selectedList;// 不完整的需要全部重新下载
     }
     myDebug(urlList[0]);
     let rpList;
+    let pGotList = urlList.map((url)=>got(url));
     try{
-      rpList = await Promise.all(urlList.map((url)=>downloadData(url)))
+      // rpList = await Promise.all(urlList.map((url)=>downloadData(url)))
+      rpList = await Promise.all(pGotList.map((pGot)=>downloadData(pGot)))
     }catch(err){
       if(err.errorCode === 404){
         myDebug('其中一个成员404，跳过本时次');
+        pGotList.forEach(pGot => pGot.cancel())
         continue;
       }else{
+        myDebug('链接异常');
         throw err;
       }
     }
@@ -233,6 +250,7 @@ async function mainDownload(model='ncep'){
             console.trace(err)
           });
       }
+      await save2DB(mgTC).catch(err=>{throw err});
     };
   }
 
@@ -251,8 +269,12 @@ async function mutiDownload(){
 }
 
 async function initDB(){
+  await connect();
+  initSchemas();
+  save2DB = require('./db/util.db').save2DB;
+
   let ruleI1 = new schedule.RecurrenceRule();
-  ruleI1.minute = [new schedule.Range(1, 59, 20)];// 15分钟轮询
+  ruleI1.minute = [new schedule.Range(1, 59, 20)];// 20分钟轮询
   let job1 = schedule.scheduleJob(ruleI1, (fireDate)=>{
     // TODO 检测是否连接上mongodb
     console.log('轮询开始'+fireDate.toString());
@@ -261,12 +283,12 @@ async function initDB(){
         console.log('轮询完毕');
       })
       .catch(err=>{
-      console.error(err);
+        console.trace(err);
       });
   });
   return mutiDownload()
     .catch(err=>{
-    console.error(err);
+      console.trace(err);
     });
 }
 
