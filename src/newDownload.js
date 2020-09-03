@@ -15,7 +15,7 @@ dayjs.extend(utc);
 dayjs.extend(customParseFormat);
 
 // TODO 判断文件是否存在
-
+process.env.NODE_ENV = 'production';
 // ######配置########
 let modelConfig = {
   ncep:{
@@ -250,7 +250,7 @@ async function mainDownload(model='ncep'){
             console.trace(err)
           });
       }
-      await save2DB(mgTC).catch(err=>{throw err});
+      save2DB(mgTC).catch(err=>{throw err});
     };
   }
 
