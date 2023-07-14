@@ -17,7 +17,39 @@ dayjs.extend(customParseFormat);
 let config = {
   listUrl:'https://www.emc.ncep.noaa.gov/gmb/tpm/emchurr/tcgen/datebar.html',
   wpUrlPrefix:'https://www.emc.ncep.noaa.gov/gmb/tpm/emchurr/tcgen/atx/storms.aeperts.atcf_gen.wptg.',
-  fileName(date){return 'storms.aeperts.atcf_gen.wptg.'+date+'.txt'},
+  fileName(date, prefix='storms.aeperts.atcf_gen.wptg.'){return prefix+date+'.txt'},
+  insInfo:{
+    'NCEPEns':{
+      prefix:'storms.aeperts.atcf_gen.wptg.'
+    },
+    'GFS':{
+      prefix:'storms.gfso.atcf_gen.wptg.',
+    },
+    'NCEP35-dayEns':{
+      prefix:'storms.gxperts.atcf_gen.wptg.',
+    },
+    'Ukmet':{
+      prefix:'storms.ukx.atcf_gen.wptg.',
+    },
+    'Ukmet':{
+      prefix:'storms.ukx.atcf_gen.wptg.',
+    },
+    'NAVGEM':{
+      prefix:'storms.ngx.atcf_gen.wptg.',
+    },
+    'FNMOCEns':{
+      prefix:'storms.feperts.atcf_gen.wptg.',
+    },
+    'CMC':{
+      prefix:'storms.cmc.atcf_gen.wptg.',
+    },
+    'CMCEns':{
+      prefix:'storms.ceperts.atcf_gen.wptg.',
+    },
+
+  },
+
+
 }
 
 async function readLocal(){
@@ -52,8 +84,11 @@ function splitBul(str=''){
 //     throw err;
 //   })
 
-
-const getLatestList = async ()=>{
+/**
+ * 从'https://www.emc.ncep.noaa.gov/gmb/tpm/emchurr/tcgen/datebar.html'获取最近三个时次的url
+ * @returns 
+ */
+const getLatestList = async (itemNumber=10)=>{
   let url = config.listUrl;
   let htmlBody;
   let rpOption = {
@@ -73,17 +108,17 @@ const getLatestList = async ()=>{
     dateList.push($(this).text().trim());
   });
   dateList.shift();
-  let leastLinks = dateList.slice(0,3);//获取前3个时次
+  let leastLinks = dateList.slice(0,itemNumber);//获取前N个时次
   return leastLinks;
 }
 
 const main = async ()=>{
-  let need2DownloadList = await getLatestList();
-  for(let date of need2DownloadList){
-    let rpOption = {uri: config.wpUrlPrefix + date,timeout: 40*1000,};
+  let need2DownloadList = await getLatestList(10);// 从左侧bar获取最近10个时次的
+  for(let date of need2DownloadList){// date = []
+    let rpOption = {uri: config.wpUrlPrefix + date, timeout: 40*1000,};// 报文下载地址https://www.emc.ncep.noaa.gov/gmb/tpm/emchurr/tcgen/atx/storms.feperts.atcf_gen.wptg.2023071200
     let initTime = dayjs.utc(date,'YYYYMMDDHH');
     let dirPath = path.resolve(__dirname+'./../../data/cyclone/emc/ncep/',date.slice(0,4));
-    // TODO 检查是否存在;
+    // 检查本地文件是否存在;
     let bulletinRaw;
     let fileName = config.fileName(date);
     try{
@@ -95,23 +130,51 @@ const main = async ()=>{
           console.log('准备下载'+fileName);
           bulletinRaw = await rp(rpOption);
         }catch(err){
-          console.error('下载文件发生意外'+fileName);
-          throw err;
+          if(err.statusCode===404){
+            console.log('远程文件不存在'+rpOption.uri);
+            continue
+          }else{
+            console.error('下载文件发生意外'+fileName);
+            throw err;
+          }
         }
         writeFile(filePath, bulletinRaw)
+          .then(()=>{
+            console.log(`文件已保存${fileName}`);
+          })
           .catch(err=>{console.log(err)});
       }else{
-        // myDebug(`文件已存在${RegArr[2]}`);
+        console.log(`文件已存在${fileName}`);
         continue;
       }
     }
     catch(err){
       console.log(err);
     };
-    let stormList = splitBul(bulletinRaw);
+    if(!bulletinRaw){
+      //TODO 准备解析
+      // let stormList = splitBul(bulletinRaw);
+    }
+    
     // console.log(stormList.length);
   }
 }
 
 main()
   .catch(err=>console.error(err));
+
+// 定时触发
+let ruleI1 = new schedule.RecurrenceRule();
+ruleI1.minute = [new schedule.Range(1, 59, 20)];// 20分钟轮询
+let job1 = schedule.scheduleJob(ruleI1, (fireDate)=>{
+  console.log('轮询开始'+fireDate.toString());
+  main()
+    .then(()=>{
+      console.log('轮询完毕');
+    })
+    .catch(err=>{
+      console.trace(err);
+    });
+});
+
+
