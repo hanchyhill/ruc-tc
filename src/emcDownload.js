@@ -14,7 +14,7 @@ dayjs.extend(toArray);
 const customParseFormat = require('dayjs/plugin/customParseFormat');
 dayjs.extend(utc);
 dayjs.extend(customParseFormat);
-ins_wanted = ['NCEPEns'];
+ins_wanted = ['NCEPEns', 'FNMOCEns','CMCEns','Ukmet'];
 let config = {
   listUrl:'https://www.emc.ncep.noaa.gov/gmb/tpm/emchurr/tcgen/datebar.html',
   wpUrlPrefix:'https://www.emc.ncep.noaa.gov/gmb/tpm/emchurr/tcgen/atx/',
@@ -22,31 +22,42 @@ let config = {
   insInfo:{
     'NCEPEns':{
       prefix:'storms.aeperts.atcf_gen.wptg.',
-      ins:'ncep-e'
+      ins:'ncep_e',
+      dir:'ncep',
     },
     'GFS':{
       prefix:'storms.gfso.atcf_gen.wptg.',
+      ins:'ncep_e',
+      dir:'ncep',
     },
     'NCEP35-dayEns':{
       prefix:'storms.gxperts.atcf_gen.wptg.',
+      dir:'ncep',
     },
     'Ukmet':{
       prefix:'storms.ukx.atcf_gen.wptg.',
-    },
-    'Ukmet':{
-      prefix:'storms.ukx.atcf_gen.wptg.',
+      ins:'ukmo_e',
+      dir:'ukmo',
     },
     'NAVGEM':{
       prefix:'storms.ngx.atcf_gen.wptg.',
+      ins:'fnmoc_e',
+      dir:'fnmoc',
     },
     'FNMOCEns':{
       prefix:'storms.feperts.atcf_gen.wptg.',
+      ins:'fnmoc_e',
+      dir:'fnmoc',
     },
     'CMC':{
       prefix:'storms.cmc.atcf_gen.wptg.',
+      ins:'cmc_e',
+      dir:'cmc',
     },
     'CMCEns':{
       prefix:'storms.ceperts.atcf_gen.wptg.',
+      ins:'cmc_e',
+      dir:'cmc',
     },
 
   },
@@ -114,16 +125,16 @@ const getLatestList = async (itemNumber=10)=>{
   return leastLinks;
 }
 
-async function downloadbyIns (ins){
-  let need2DownloadList = await getLatestList(10);// 从左侧bar获取最近10个时次的
+async function downloadbyIns (ins, need2DownloadList){
+  // let need2DownloadList = await getLatestList(10);// 从左侧bar获取最近10个时次的
   for(let date of need2DownloadList){// date = []
     let uri =config.wpUrlPrefix + config.insInfo[ins].prefix +date
     let rpOption = {uri: uri, timeout: 40*1000,};// 报文下载地址https://www.emc.ncep.noaa.gov/gmb/tpm/emchurr/tcgen/atx/storms.feperts.atcf_gen.wptg.2023071200
     let initTime = dayjs.utc(date,'YYYYMMDDHH');
-    let dirPath = path.resolve(__dirname+'./../../data/cyclone/emc/ncep/',date.slice(0,4));
+    let dirPath = path.resolve(__dirname+`./../../data/cyclone/emc/${config.insInfo[ins].dir}/`,date.slice(0,4));
     // 检查本地文件是否存在;
     let bulletinRaw;
-    let fileName = config.fileName(date);
+    let fileName = config.fileName(date, config.insInfo[ins].prefix);
     try{
       await pMakeDir(dirPath);//创建不存在的目录
       const filePath = path.resolve(dirPath, fileName);
@@ -154,10 +165,10 @@ async function downloadbyIns (ins){
     catch(err){
       console.log(err);
     };
-    if(!bulletinRaw){
+    if(bulletinRaw){
       //TODO 准备解析
       // let stormList = splitBul(bulletinRaw);
-      let mgTClist = tcfa2mongo(bulletinRaw, ins);
+      let mgTClist = tcfa2mongo(bulletinRaw, config.insInfo[ins].ins);
       for(let mgTC of mgTClist){
         save2DB(mgTC).catch(err=>{throw err});
       }
@@ -168,12 +179,14 @@ async function downloadbyIns (ins){
 }
 
 async function main(){
+  let need2DownloadList = await getLatestList(10);// 从左侧bar获取最近10个时次的
   for (let ins of ins_wanted){
-    await downloadbyIns(ins);
+    await downloadbyIns(ins, need2DownloadList);
   }
 }
 
 async function initDB(){
+  process.env['NODE_ENV'] = 'production';
   await connect();
   initSchemas();
   save2DB = require('./db/util.db').save2DB;

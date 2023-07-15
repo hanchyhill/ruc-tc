@@ -170,7 +170,7 @@ function transLines(newLines, ins = 'ecmwf') {
           return true;
       }
   });
-  console.log(sortList);
+  // console.log(sortList);
   // sortList = trimDuplicateDetTrack(sortList);
   return sortList;
   // return trans2mongoFormat(sortList);

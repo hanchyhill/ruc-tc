@@ -257,7 +257,7 @@ function extractMetaInfo(fcItem={trackList:[{basinshort:''}],type:{},ins:''}){
 }
 
 async function main() {
-  rawText = await readFile(path.join(__dirname, '../demo/storms.aeperts.atcf_gen.wptg.2023071400.txt'));
+  rawText = await readFile(path.join(__dirname, '../demo/storms.feperts.atcf_gen.wptg.2023071500.txt'));
   let allInfo = splitBul(rawText.toString());
   console.log(allInfo);
   // filter allInfo, drop the stormName is not start with digital Number
@@ -268,7 +268,7 @@ async function main() {
   });
   console.log(filter_info);
   for (let storm of filter_info) {
-    let tcList = transLines(storm.lines,'ncep_e');
+    let tcList = transLines(storm.lines,'fnmoc_e');
     let arrangeTC = mergeTCbyID(tcList);
     for(let tc of arrangeTC){
       tc = trimDuplicateDetTrack(tc);
