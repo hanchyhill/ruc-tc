@@ -6,7 +6,7 @@ const path = require('path');
 const dayjs = require('dayjs');
 const utc = require('dayjs/plugin/utc');
 const toArray = require('dayjs/plugin/toArray');
-const resolveTCFA = require('./lib/resolveTCFA.js').resolveTCFA;
+const tcfa2mongo = require('./lib/emc_TCFA.js').tcfa2mongo;
 const {pMakeDir,isExists,readFile,writeFile} = require('./lib/util.js');
 const {connect,initSchemas} = require('./db/initDB.js');
 const schedule = require('node-schedule');
@@ -14,13 +14,15 @@ dayjs.extend(toArray);
 const customParseFormat = require('dayjs/plugin/customParseFormat');
 dayjs.extend(utc);
 dayjs.extend(customParseFormat);
+ins_wanted = ['NCEPEns'];
 let config = {
   listUrl:'https://www.emc.ncep.noaa.gov/gmb/tpm/emchurr/tcgen/datebar.html',
-  wpUrlPrefix:'https://www.emc.ncep.noaa.gov/gmb/tpm/emchurr/tcgen/atx/storms.aeperts.atcf_gen.wptg.',
+  wpUrlPrefix:'https://www.emc.ncep.noaa.gov/gmb/tpm/emchurr/tcgen/atx/',
   fileName(date, prefix='storms.aeperts.atcf_gen.wptg.'){return prefix+date+'.txt'},
   insInfo:{
     'NCEPEns':{
-      prefix:'storms.aeperts.atcf_gen.wptg.'
+      prefix:'storms.aeperts.atcf_gen.wptg.',
+      ins:'ncep-e'
     },
     'GFS':{
       prefix:'storms.gfso.atcf_gen.wptg.',
@@ -112,10 +114,11 @@ const getLatestList = async (itemNumber=10)=>{
   return leastLinks;
 }
 
-const main = async ()=>{
+async function downloadbyIns (ins){
   let need2DownloadList = await getLatestList(10);// 从左侧bar获取最近10个时次的
   for(let date of need2DownloadList){// date = []
-    let rpOption = {uri: config.wpUrlPrefix + date, timeout: 40*1000,};// 报文下载地址https://www.emc.ncep.noaa.gov/gmb/tpm/emchurr/tcgen/atx/storms.feperts.atcf_gen.wptg.2023071200
+    let uri =config.wpUrlPrefix + config.insInfo[ins].prefix +date
+    let rpOption = {uri: uri, timeout: 40*1000,};// 报文下载地址https://www.emc.ncep.noaa.gov/gmb/tpm/emchurr/tcgen/atx/storms.feperts.atcf_gen.wptg.2023071200
     let initTime = dayjs.utc(date,'YYYYMMDDHH');
     let dirPath = path.resolve(__dirname+'./../../data/cyclone/emc/ncep/',date.slice(0,4));
     // 检查本地文件是否存在;
@@ -154,27 +157,48 @@ const main = async ()=>{
     if(!bulletinRaw){
       //TODO 准备解析
       // let stormList = splitBul(bulletinRaw);
+      let mgTClist = tcfa2mongo(bulletinRaw, ins);
+      for(let mgTC of mgTClist){
+        save2DB(mgTC).catch(err=>{throw err});
+      }
     }
     
     // console.log(stormList.length);
   }
 }
 
-main()
-  .catch(err=>console.error(err));
+async function main(){
+  for (let ins of ins_wanted){
+    await downloadbyIns(ins);
+  }
+}
 
-// 定时触发
-let ruleI1 = new schedule.RecurrenceRule();
-ruleI1.minute = [new schedule.Range(1, 59, 20)];// 20分钟轮询
-let job1 = schedule.scheduleJob(ruleI1, (fireDate)=>{
-  console.log('轮询开始'+fireDate.toString());
-  main()
-    .then(()=>{
-      console.log('轮询完毕');
-    })
+async function initDB(){
+  await connect();
+  initSchemas();
+  save2DB = require('./db/util.db').save2DB;
+
+  let ruleI1 = new schedule.RecurrenceRule();
+  ruleI1.minute = [new schedule.Range(1, 59, 20)];// 20分钟轮询
+  let job1 = schedule.scheduleJob(ruleI1, (fireDate)=>{
+    // TODO 检测是否连接上mongodb
+    console.log('轮询开始'+fireDate.toString());
+    main()
+      .then(()=>{
+        console.log('轮询完毕');
+      })
+      .catch(err=>{
+        console.trace(err);
+      });
+  });
+  return main()
     .catch(err=>{
       console.trace(err);
     });
-});
+}
+
+initDB().catch(err=>{
+  console.trace(err);
+})
 
 

@@ -2,7 +2,7 @@ const ncepConfig = {
   typeList : [
     {
       type:"ensembleForecast",
-      filter(str='AP01'){
+      filter(str='AP01'){// AC00 APxx
         const reg =  /.*?(\d{2})/;
         const result = str.match(reg);// Array ["EM01", "01"]
         if(result){
@@ -45,8 +45,59 @@ const ncepConfig = {
     },
   ],
   ins:'NCEP-R',
-  detNameList:['TGFS2','AVNO','AVNI'],
+  detNameList:['TGFS2','AVNO','AVNI','GFSO'],
   ensNumber:21,
+}
+
+const ncepEmcConfig = {
+  typeList : [
+    {
+      type:"ensembleForecast",
+      filter(str='AP01'){// AC00 APxx
+        const reg =  /.*?(\d{2})/;
+        const result = str.match(reg);// Array ["EM01", "01"]
+        if(result){
+          return {
+            type:"ensembleForecast",
+            ensembleNumber: Number(result[1]),
+            oriType:str,
+          }
+        }else{
+          return false;
+        }
+      },
+    },
+    {
+      type:'determineForecast',
+      filter(str='TGFS2'){
+        if(str=='TGFS2'||str=='GFSO'){
+          return {
+            type:"determineForecast",
+            "ensembleNumber": -1,
+            oriType:str,
+          }
+        }else if(str=='AVNO'||str=='AVNI'){
+          return {
+            type:"determineForecast",
+            "ensembleNumber": -2,
+            oriType:str,
+          }
+        }else if(str=='AEMN'){
+          return {
+            type:"ensembleMean",
+            "ensembleNumber": -10,
+            oriType:str,
+          }
+        }
+        else{
+          return false;
+        }
+      }
+    },
+  ],
+  ins:'NCEP-E',
+  detNameList:['TGFS2','AVNO','AVNI','GFSO'],
+  ensNumber:30,
 }
 
 let ukmoConfig = {
@@ -252,6 +303,8 @@ function selectConfig(ins='ecmwf'){
     return cmcConfig;
   }else if(ins==='fnmoc') {
     return fnmocConfig;
+  }else if(ins==='ncep_e') {
+    return ncepEmcConfig;
   }else{
     throw new TypeError('not valid ins');
   }
@@ -263,6 +316,7 @@ const ncepName = ['AC00',//控制预报
 'AVNO',// GFS Model确定性预报, 首要第一
 'AVNI',// GFS Model (Interpolated 06 hours)
 'AEMN',//集合平均
+'GFSO',// 确定性预报EMC
 ];
 const ecName = [
   'ECMO',//ECMWF model [GTS tracker]

@@ -1,12 +1,12 @@
 const fs = require('fs');
-const { pMakeDir, isExists, readFile, writeFile } = require('../lib/util.js');
+const { pMakeDir, isExists, readFile, writeFile } = require('./util.js');
 const path = require('path');
 const dayjs = require('dayjs');
 const utc = require('dayjs/plugin/utc');
 const customParseFormat = require('dayjs/plugin/customParseFormat');
 dayjs.extend(utc);
 dayjs.extend(customParseFormat);
-const selectConfig = require('../lib/insConfig.js').selectConfig;
+const selectConfig = require('./insConfig.js').selectConfig;
 
 function setTcType(oriType, config = selectConfig('ncep_emc')) {
   let whichType = false;
@@ -107,8 +107,6 @@ function splitBul(str = '') {
       stormName.push(name);
     }
   }
-  // TODO line2 设置初始经纬度2023071400_F000_170N_1207E_95W, time_F{hour}_lat_lon_name
-  // line2中的经纬度设置成loc中的经纬度
   let allInfo = stormList.map(storm => {
     let line = storm[0];
     let basin = line[0];
@@ -117,8 +115,6 @@ function splitBul(str = '') {
       basin,
       stormName,
       lines: storm,
-      baseLoc:line[2],
-      baseHour:line[2],
     }
   })
   return allInfo;
@@ -256,24 +252,26 @@ function extractMetaInfo(fcItem={trackList:[{basinshort:''}],type:{},ins:''}){
   }
 }
 
-async function main() {
-  rawText = await readFile(path.join(__dirname, '../demo/storms.aeperts.atcf_gen.wptg.2023071400.txt'));
+function main(rawText='',ins='ncep_e') {
+  // rawText = await readFile(path.join(__dirname, '../demo/storms.aeperts.atcf_gen.wptg.2023071400.txt'));
   let allInfo = splitBul(rawText.toString());
-  console.log(allInfo);
+  // console.log(allInfo);
   // filter allInfo, drop the stormName is not start with digital Number
   const regex = /\d$/;
   let filter_info = allInfo.filter(storm => {
     let found = regex.test(storm.stormName);
     return !found;
   });
-  console.log(filter_info);
+  let mgTClist = [];
+  // console.log(filter_info);
   for (let storm of filter_info) {
-    let tcList = transLines(storm.lines,'ncep_e');
+    let tcList = transLines(storm.lines, ins);
     let arrangeTC = mergeTCbyID(tcList);
     for(let tc of arrangeTC){
       tc = trimDuplicateDetTrack(tc);
       const mgTC = trans2mongoFormat(tc);
-      const tcID = mgTC.tcID;
+      // const tcID = mgTC.tcID;
+      mgTClist.push(mgTC);
       // const matchTimeStr = tcID.match(/\d{10}/);
       // if(matchTimeStr){
         // const filePath = `./${matchTimeStr[0]}/${tcID}.json`;
@@ -285,7 +283,9 @@ async function main() {
       // save2DB(mgTC).catch(err=>{throw err});
     };
   }
-
+  return mgTClist;
 }
 
-main()
+module.exports = {
+  tcfa2mongo: main,
+};

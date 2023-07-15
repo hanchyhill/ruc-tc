@@ -175,12 +175,6 @@ function extractMetaInfo(fcItem={trackList:[{basinshort:''}],type:{},ins:''}){
     initTime,
     tcID,
   }
-  // let cycloneName = 
-  //  "basinShort2" : "SP",
-  // "cycloneNumber" : "15",
-  // "cycloneName" : "Oma",
-  // "ins" : "NCEP",
-  // "initTime" : "2019-02-25T00:00:00.000Z",
 }
 
 /**
