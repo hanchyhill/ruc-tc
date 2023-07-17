@@ -14,7 +14,7 @@ dayjs.extend(toArray);
 const customParseFormat = require('dayjs/plugin/customParseFormat');
 dayjs.extend(utc);
 dayjs.extend(customParseFormat);
-ins_wanted = ['NCEPEns', 'FNMOCEns','CMCEns','Ukmet'];
+ins_wanted = ['GFS', 'NCEPEns', 'FNMOCEns','CMCEns','Ukmet'];
 let config = {
   listUrl:'https://www.emc.ncep.noaa.gov/gmb/tpm/emchurr/tcgen/datebar.html',
   wpUrlPrefix:'https://www.emc.ncep.noaa.gov/gmb/tpm/emchurr/tcgen/atx/',
