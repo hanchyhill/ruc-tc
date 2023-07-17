@@ -206,9 +206,9 @@ function trans2mongoFormat(sortList=[]){
   newFormat.controlIndex = controlIndex;
   newFormat.fillStatus = 0;
   if(detTrack) newFormat.detTrack = detTrack[0];
-  if(ensembleTracks.length !== 0 &&detIndex !== -1) newFormat.fillStatus = 3;
-  if(ensembleTracks.length == 0 &&detIndex !== -1) newFormat.fillStatus = 1;
-  if(ensembleTracks.length !== 0 &&detIndex == -1) newFormat.fillStatus = 2;
+  if(ensembleTracks.length !== 0 &&detIndex !== -1) newFormat.fillStatus = 3;// 确定性预报和集合预报都有
+  if(ensembleTracks.length == 0 &&detIndex !== -1) newFormat.fillStatus = 1;// 只有确定性预报
+  if(ensembleTracks.length !== 0 &&detIndex == -1) newFormat.fillStatus = 2;// 只有集合预报
   return newFormat;
 }
 

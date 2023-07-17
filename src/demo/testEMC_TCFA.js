@@ -7,6 +7,7 @@ const customParseFormat = require('dayjs/plugin/customParseFormat');
 dayjs.extend(utc);
 dayjs.extend(customParseFormat);
 const selectConfig = require('../lib/insConfig.js').selectConfig;
+const tcfa2mongo = require('../lib/emc_TCFA.js').tcfa2mongo;
 
 function setTcType(oriType, config = selectConfig('ncep_emc')) {
   let whichType = false;
@@ -210,9 +211,9 @@ function trans2mongoFormat(sortList=[]){
   newFormat.controlIndex = controlIndex;
   newFormat.fillStatus = 0;
   if(detTrack) newFormat.detTrack = detTrack[0];
-  if(ensembleTracks.length !== 0 &&detIndex !== -1) newFormat.fillStatus = 3;
-  if(ensembleTracks.length == 0 &&detIndex !== -1) newFormat.fillStatus = 1;
-  if(ensembleTracks.length !== 0 &&detIndex == -1) newFormat.fillStatus = 2;
+  if(ensembleTracks.length !== 0 &&detIndex !== -1) newFormat.fillStatus = 3;// 确定性预报和集合预报都有
+  if(ensembleTracks.length == 0 &&detIndex !== -1) newFormat.fillStatus = 1;// 只有确定性预报
+  if(ensembleTracks.length !== 0 &&detIndex == -1) newFormat.fillStatus = 2;// 只有集合预报
   return newFormat;
 }
 
@@ -257,7 +258,7 @@ function extractMetaInfo(fcItem={trackList:[{basinshort:''}],type:{},ins:''}){
 }
 
 async function main() {
-  rawText = await readFile(path.join(__dirname, '../demo/storms.feperts.atcf_gen.wptg.2023071500.txt'));
+  rawText = await readFile(path.join(__dirname, '../demo/storms.gfso.atcf_gen.wptg.2023071600.txt'));
   let allInfo = splitBul(rawText.toString());
   console.log(allInfo);
   // filter allInfo, drop the stormName is not start with digital Number
@@ -268,7 +269,7 @@ async function main() {
   });
   console.log(filter_info);
   for (let storm of filter_info) {
-    let tcList = transLines(storm.lines,'fnmoc_e');
+    let tcList = transLines(storm.lines,'ncep_e');
     let arrangeTC = mergeTCbyID(tcList);
     for(let tc of arrangeTC){
       tc = trimDuplicateDetTrack(tc);
