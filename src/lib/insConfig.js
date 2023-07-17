@@ -97,7 +97,7 @@ const ncepEmcConfig = {
   ],
   ins:'NCEP-E',
   detNameList:['TGFS2','AVNO','AVNI','GFSO'],
-  ensNumber:30,
+  ensNumber:31,
 }
 
 let ukmoConfig = {
