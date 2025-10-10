@@ -8,14 +8,9 @@ dayjs.extend(utc);
 dayjs.extend(customParseFormat);
 const fs = require('fs');
 const path = require('path');
-const {processFNV3CSVDataEnhanced} = require('./resolve.CSV_fnv3.js');
-// const schedule = require('node-schedule');
-// const {connect,initSchemas} = require('./db/initDB.js');
 const process = require('process');
 
-// 设置环境变量
-// process.env.NODE_ENV = 'production';
-// process.env.PORT = '8080';
+
 // 设置代理环境变量
 process.env.HTTP_PROXY = 'http://127.0.0.1:10809';
 process.env.HTTPS_PROXY = 'http://127.0.0.1:10809';
@@ -72,11 +67,11 @@ async function downloadOtherData(date){
     
 
     // demo url            http://deepmind.gdmo.gq/science/weatherlab/download/cyclones/FNV3/ensemble/paired/atcf/FNV3_2025_09_28T00_00_atcf_a_deck.txt
-    let url_tcfa_ensemble_mirror = `${BASE_URL_MIRROR}/science/weatherlab/download/cyclones/FNV3/ensemble/paired/atcf/${tcfa_file_name}`;
-    let url_tcfa_ensemble_mean_mirror = `${BASE_URL_MIRROR}/science/weatherlab/download/cyclones/FNV3/ensemble_mean/paired/atcf/${tcfa_file_name}`
-    let url_csv_pair_ensemble_mirror = `${BASE_URL_MIRROR}/science/weatherlab/download/cyclones/FNV3/ensemble/paired/csv/${csv_pair_file_name}`;
-    let url_csv_pair_mean_mirror = `${BASE_URL_MIRROR}/science/weatherlab/download/cyclones/FNV3/ensemble_mean/paired/csv/${csv_pair_file_name}`;
-    let url_csv_cyclogenesis_mirror = `${BASE_URL_MIRROR}/science/weatherlab/download/cyclones/FNV3/ensemble/cyclogenesis/csv/${csv_cyclogenesis_file_name}`;
+    let url_tcfa_ensemble_mirror = `${BASE_URL}/science/weatherlab/download/cyclones/FNV3/ensemble/paired/atcf/${tcfa_file_name}`;
+    let url_tcfa_ensemble_mean_mirror = `${BASE_URL}/science/weatherlab/download/cyclones/FNV3/ensemble_mean/paired/atcf/${tcfa_file_name}`
+    let url_csv_pair_ensemble_mirror = `${BASE_URL}/science/weatherlab/download/cyclones/FNV3/ensemble/paired/csv/${csv_pair_file_name}`;
+    let url_csv_pair_mean_mirror = `${BASE_URL}/science/weatherlab/download/cyclones/FNV3/ensemble_mean/paired/csv/${csv_pair_file_name}`;
+    let url_csv_cyclogenesis_mirror = `${BASE_URL}/science/weatherlab/download/cyclones/FNV3/ensemble/cyclogenesis/csv/${csv_cyclogenesis_file_name}`;
     try {
         if (checkFileExists(tcfa_file_name, timeStr, "atcf_ensemble")) {
             console.log(`File ${tcfa_file_name} already exists for ${timeStr}, skipping download`);
@@ -141,38 +136,6 @@ async function downloadOtherData(date){
 
 }
 
-// async function downloadData(date){
-//     try {
-
-//         const timeStr = date.format('YYYY_MM_DDTHH_00');
-//         let csv_cyclogenesis_file_name = `FNV3_${timeStr}_cyclogenesis.csv`;
-//         // 检查文件是否已存在
-//         if (checkFileExists(csv_cyclogenesis_file_name, timeStr, "csv_cyclogenesis")) {
-//             console.log(`File already exists for ${timeStr}, skipping download`);
-//             return null;
-//         }
-       
-//         // demo url            http://deepmind.gdmo.gq/science/weatherlab/download/cyclones/FNV3/ensemble/paired/atcf/FNV3_2025_09_28T00_00_atcf_a_deck.txt
-//         // let url_tcfa_mirror = `http://deepmind.gdmo.gq/science/weatherlab/download/cyclones/FNV3/ensemble/paired/atcf/FNV3_${timeStr}_atcf_a_deck.txt`
-//         let url_csv_cyclogenesis_mirror = `http://deepmind.gdmo.gq/science/weatherlab/download/cyclones/FNV3/ensemble/cyclogenesis/csv/${csv_cyclogenesis_file_name}`;
-//         console.log(url_csv_cyclogenesis_mirror)
-//         let tcfa_raw = await rp(url_csv_cyclogenesis_mirror)
-//         // console.log(tcfa_raw)
-
-//         // 保存数据
-//         const filePath = saveDataToFile(tcfa_raw, csv_cyclogenesis_file_name, timeStr, "csv_cyclogenesis");
-//         const processedData = processFNV3CSVDataEnhanced(filePath);
-//         const mgTClist = processedData.data;
-//         for(let mgTC of mgTClist){
-//             save2DB(mgTC).catch(err=>{throw err});
-//         }
-
-//         return processedData;
-//     } catch (error) {
-//         console.error(`Failed to download data for ${date.format('YYYY-MM-DD HH:mm:ss')}:`, error.message);
-//         return null;
-//     }
-// }
 
 function getLatestModelTime(){
     const now = dayjs.utc();
@@ -232,32 +195,3 @@ async function main() {
 main().catch(err=>{
     console.trace(err);
 })
-
-// async function initDB(){
-//     process.env['NODE_ENV'] = 'production';
-//     await connect();
-//     initSchemas();
-//     save2DB = require('./db/util.db.js').save2DB;
-  
-//     let ruleI1 = new schedule.RecurrenceRule();
-//     ruleI1.minute = [new schedule.Range(1, 59, 20)];// 20分钟轮询
-//     let job1 = schedule.scheduleJob(ruleI1, (fireDate)=>{
-//       // TODO 检测是否连接上mongodb
-//       console.log('轮询开始'+fireDate.toString());
-//       main()
-//         .then(()=>{
-//           console.log('轮询完毕');
-//         })
-//         .catch(err=>{
-//           console.trace(err);
-//         });
-//     });
-//     return main()
-//       .catch(err=>{
-//         console.trace(err);
-//       });
-//   }
-  
-//   initDB().catch(err=>{
-//     console.trace(err);
-//   })
