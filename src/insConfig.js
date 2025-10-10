@@ -508,6 +508,8 @@ function selectConfig(ins='ecmwf'){
     return fnmocEmcConfig;
   }else if(ins==='fnv3') {
     return fnv3Config;
+  }else if(ins==='fnv3-gen') {
+    return fnv3Config;
   }
   else{
     throw new TypeError('not valid ins');
