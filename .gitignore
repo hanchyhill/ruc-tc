@@ -29,7 +29,7 @@ remote-img/*
 yarn.lock
 yarn-error.log
 *.ppt
-
+*.png
 
 
 src/demo/hfip.tceps.wkshp.20100421.ppt
