@@ -127,7 +127,7 @@ async function downloadOtherData(date){
         }else{  
         console.log('准备下载 CSV Cyclogenesis:' + csv_cyclogenesis_file_name)
         let csv_cyclogenesis_raw = await rp(url_csv_cyclogenesis_mirror);
-            const filePath = saveDataToFile(csv_cyclogenesis_raw, csv_cyclogenesis_file_name, timeStr, "ensemble");
+            const filePath = saveDataToFile(csv_cyclogenesis_raw, csv_cyclogenesis_file_name, timeStr, "csv_cyclogenesis");
         }
     } catch (error) {
         console.error(`Failed to download data for ${date.format('YYYY-MM-DD HH:mm:ss')}:`, error.message);
@@ -171,25 +171,46 @@ function getLatestModelTimeList(list_count = 4){
     return timeList;
 }
 
+// Simple promise pool to cap concurrent downloads without third-party helpers.
+async function runWithConcurrency(items, limit, worker) {
+    if (limit < 1) {
+        throw new Error('Concurrency limit must be at least 1');
+    }
+
+    const executing = new Set();
+
+    for (const item of items) {
+        const promise = Promise.resolve().then(() => worker(item));
+        executing.add(promise);
+
+        const cleanup = () => executing.delete(promise);
+        promise.then(cleanup).catch(cleanup);
+
+        if (executing.size >= limit) {
+            await Promise.race(executing);
+        }
+    }
+
+    await Promise.allSettled(executing);
+}
+
 async function main() {
     const start_time = dayjs.utc('2022-01-01 00:00:00');
     const end_time = dayjs.utc();
     const day_count = end_time.diff(start_time, 'day');
-    time_cout = day_count * 4;
+    const time_cout = day_count * 4;
     const timeList = getLatestModelTimeList(time_cout);
-    for(let time of timeList){
-        if(time.isAfter(start_time) && time.isBefore(end_time)){
-            try {
-                console.log(time.format('YYYYMMDD HH:mm:ss'));
-                // await downloadData(time);
-                await downloadOtherData(time);
-            } catch (error) {
-                console.error(`Error processing time ${time.format('YYYYMMDD HH:mm:ss')}:`, error.message);
-                continue;
-            }
-        }
-    }
+    const timesToProcess = timeList.filter(time => time.isAfter(start_time) && time.isBefore(end_time));
+    const concurrencyLimit = 30;
 
+    await runWithConcurrency(timesToProcess, concurrencyLimit, async (time) => {
+        try {
+            console.log(time.format('YYYYMMDD HH:mm:ss'));
+            await downloadOtherData(time);
+        } catch (error) {
+            console.error(`Error processing time ${time.format('YYYYMMDD HH:mm:ss')}:`, error.message);
+        }
+    });
 }
 
 main().catch(err=>{
