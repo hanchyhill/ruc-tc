@@ -25,16 +25,31 @@ async function get_aifs(date = "2025101200", area = "WesternPacific") {
  * @param {number} p_env – 环境气压 (hPa)，默认 1010 hPa
  * @returns {number} – 估算最大持续风速 (m/s)
  */
-function estimateMaxWind_WNP(p_c, p_env = 1010) {
-    if (p_c >= p_env) {
-      console.warn("中心气压大于或等于环境气压，模型可能失效");
+function estimateMaxWind_WNP(centralPressureHpa, ambientPressureHpa = 1010) {
+    // 验证输入是否为有效数字
+    if (typeof centralPressureHpa !== 'number' || isNaN(centralPressureHpa)) {
+      return "错误：输入的气压必须是一个数字。";
+    }
+  
+    // 确保中心气压低于环境气压参考值
+    if (centralPressureHpa >= ambientPressureHpa) {
+      // 气压差为零或负数，意味着没有形成有效气旋
       return 5;
     }
-    // Atkinson & Holliday 1977: V (knots) = 3.4 * (p_env - p_c)^0.644
-    const deltaP = p_env - p_c;
-    const V_knots = 3.4 * Math.pow(deltaP, 0.644);
-    const V_ms = V_knots * 0.51444;  // 转换为 m/s
-    return V_ms;
+  
+    // 计算气压差
+    const pressureDeficit = ambientPressureHpa - centralPressureHpa;
+  
+    // 使用 Atkinson and Holliday (1977) 公式估算风速（单位：节 knots）
+    // V(knots) = 6.7 * (P_diff)^0.644
+    const windSpeedInKnots = 6.7 * Math.pow(pressureDeficit, 0.644);
+  
+    // 将风速从节 (knots) 转换为米每秒 (m/s)
+    // 1 knot ≈ 0.514444 m/s
+    const windSpeedInMps = windSpeedInKnots * 0.514444;
+  
+    // 返回结果，保留两位小数
+    return parseFloat(windSpeedInMps.toFixed(2));
 }
 
 function trans_aifs_to_mongo_format(data){
@@ -85,13 +100,15 @@ function trans_aifs_to_mongo_format(data){
         tracks_list = tracks_list.map((track_info,index) => {
             track_info["ensembleNumber"] = index;
             return track_info;
-        })
+        });
+        let tcID = `${dayjs.utc(initTime).format('YYYYMMDDHH')}_${cycloneName}_${cycloneNumber}_${ins}`;
         return {
             ins,
             basinShort2,
             cycloneNumber,
             cycloneName,
             initTime,
+            tcID,
             fillStatus,
             tracks: tracks_list,
         }
