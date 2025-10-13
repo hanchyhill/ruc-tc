@@ -228,8 +228,8 @@ async function initDB(){
       .catch(err=>{
         console.trace(err);
       });
-  }
+}
   
-  initDB().catch(err=>{
-    console.trace(err);
-  })
+initDB().catch(err=>{
+  console.trace(err);
+})
