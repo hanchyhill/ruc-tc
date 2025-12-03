@@ -1,0 +1,522 @@
+[
+  {
+    "tcID": "2025100912_I-17WP_I-17_fnv3-gen",
+    "ensembleNumber": 0,
+    "step": 192,
+    "lon": 130.86,
+    "lat": 16.23,
+    "pres": 1002.5,
+    "wind": 15.431999999999999,
+    "clusters_id": 0
+  },
+  {
+    "tcID": "2025100912_I-24WP_I-24_fnv3-gen",
+    "ensembleNumber": 2,
+    "step": 270,
+    "lon": 145.6,
+    "lat": 18.38,
+    "pres": 1009.2,
+    "wind": 9.362079999999999,
+    "clusters_id": 1
+  },
+  {
+    "tcID": "2025100912_I-08WP_I-08_fnv3-gen",
+    "ensembleNumber": 4,
+    "step": 198,
+    "lon": 129.33,
+    "lat": 13.59,
+    "pres": 1005.1,
+    "wind": 9.31064,
+    "clusters_id": 0
+  },
+  {
+    "tcID": "2025100912_I-15WP_I-15_fnv3-gen",
+    "ensembleNumber": 6,
+    "step": 288,
+    "lon": 155.34,
+    "lat": 19.19,
+    "pres": 1010.9,
+    "wind": 8.38472,
+    "clusters_id": 1
+  },
+  {
+    "tcID": "2025100912_I-06WP_I-06_fnv3-gen",
+    "ensembleNumber": 6,
+    "step": 132,
+    "lon": 140.13,
+    "lat": 12.62,
+    "pres": 1007.1,
+    "wind": 10.39088,
+    "clusters_id": 0
+  },
+  {
+    "tcID": "2025100912_I-17WP_I-17_fnv3-gen",
+    "ensembleNumber": 7,
+    "step": 216,
+    "lon": 133.51,
+    "lat": 23.52,
+    "pres": 1005.1,
+    "wind": 10.802399999999999,
+    "clusters_id": 0
+  },
+  {
+    "tcID": "2025100912_I-18WP_I-18_fnv3-gen",
+    "ensembleNumber": 8,
+    "step": 198,
+    "lon": 128.52,
+    "lat": 12.41,
+    "pres": 1002.4,
+    "wind": 15.1748,
+    "clusters_id": 0
+  },
+  {
+    "tcID": "2025100912_I-12WP_I-12_fnv3-gen",
+    "ensembleNumber": 10,
+    "step": 186,
+    "lon": 159.29,
+    "lat": 12.56,
+    "pres": 1005.6,
+    "wind": 9.362079999999999,
+    "clusters_id": 9999
+  },
+  {
+    "tcID": "2025100912_I-14WP_I-14_fnv3-gen",
+    "ensembleNumber": 10,
+    "step": 228,
+    "lon": 124.3,
+    "lat": 21.46,
+    "pres": 1005,
+    "wind": 7.92176,
+    "clusters_id": 0
+  },
+  {
+    "tcID": "2025100912_I-18WP_I-18_fnv3-gen",
+    "ensembleNumber": 11,
+    "step": 216,
+    "lon": 124.19,
+    "lat": 15.98,
+    "pres": 1005,
+    "wind": 8.43616,
+    "clusters_id": 0
+  },
+  {
+    "tcID": "2025100912_I-23WP_I-23_fnv3-gen",
+    "ensembleNumber": 11,
+    "step": 264,
+    "lon": 137.05,
+    "lat": 12.75,
+    "pres": 1004.8,
+    "wind": 10.69952,
+    "clusters_id": 1
+  },
+  {
+    "tcID": "2025100912_I-07WP_I-07_fnv3-gen",
+    "ensembleNumber": 13,
+    "step": 144,
+    "lon": 135.19,
+    "lat": 13.61,
+    "pres": 1004.5,
+    "wind": 11.522559999999999,
+    "clusters_id": 0
+  },
+  {
+    "tcID": "2025100912_I-12WP_I-12_fnv3-gen",
+    "ensembleNumber": 14,
+    "step": 156,
+    "lon": 135.79,
+    "lat": 11.69,
+    "pres": 1004.7,
+    "wind": 12.448479999999998,
+    "clusters_id": 0
+  },
+  {
+    "tcID": "2025100912_I-08WP_I-08_fnv3-gen",
+    "ensembleNumber": 15,
+    "step": 120,
+    "lon": 142.27,
+    "lat": 11.62,
+    "pres": 1003.6,
+    "wind": 14.248879999999998,
+    "clusters_id": 0
+  },
+  {
+    "tcID": "2025100912_I-23WP_I-23_fnv3-gen",
+    "ensembleNumber": 16,
+    "step": 228,
+    "lon": 126.63,
+    "lat": 17.15,
+    "pres": 1002.9,
+    "wind": 13.3744,
+    "clusters_id": 0
+  },
+  {
+    "tcID": "2025100912_I-13WP_I-13_fnv3-gen",
+    "ensembleNumber": 17,
+    "step": 186,
+    "lon": 131.91,
+    "lat": 15.27,
+    "pres": 1004.9,
+    "wind": 12.0884,
+    "clusters_id": 0
+  },
+  {
+    "tcID": "2025100912_I-12WP_I-12_fnv3-gen",
+    "ensembleNumber": 18,
+    "step": 174,
+    "lon": 131.09,
+    "lat": 14.87,
+    "pres": 1006.5,
+    "wind": 12.91144,
+    "clusters_id": 0
+  },
+  {
+    "tcID": "2025100912_I-17WP_I-17_fnv3-gen",
+    "ensembleNumber": 19,
+    "step": 174,
+    "lon": 131.19,
+    "lat": 14.46,
+    "pres": 998.2,
+    "wind": 13.991679999999999,
+    "clusters_id": 0
+  },
+  {
+    "tcID": "2025100912_I-14WP_I-14_fnv3-gen",
+    "ensembleNumber": 20,
+    "step": 138,
+    "lon": 140.93,
+    "lat": 13.83,
+    "pres": 1004,
+    "wind": 11.162479999999999,
+    "clusters_id": 0
+  },
+  {
+    "tcID": "2025100912_I-11WP_I-11_fnv3-gen",
+    "ensembleNumber": 21,
+    "step": 156,
+    "lon": 138.47,
+    "lat": 14.06,
+    "pres": 1006.2,
+    "wind": 11.0596,
+    "clusters_id": 0
+  },
+  {
+    "tcID": "2025100912_I-21WP_I-21_fnv3-gen",
+    "ensembleNumber": 21,
+    "step": 270,
+    "lon": 145.84,
+    "lat": 17.1,
+    "pres": 1007,
+    "wind": 10.85384,
+    "clusters_id": 1
+  },
+  {
+    "tcID": "2025100912_I-12WP_I-12_fnv3-gen",
+    "ensembleNumber": 22,
+    "step": 174,
+    "lon": 131.57,
+    "lat": 14.91,
+    "pres": 1003.7,
+    "wind": 12.65424,
+    "clusters_id": 0
+  },
+  {
+    "tcID": "2025100912_I-17WP_I-17_fnv3-gen",
+    "ensembleNumber": 23,
+    "step": 234,
+    "lon": 126.44,
+    "lat": 18.46,
+    "pres": 1007.6,
+    "wind": 8.64192,
+    "clusters_id": 0
+  },
+  {
+    "tcID": "2025100912_I-21WP_I-21_fnv3-gen",
+    "ensembleNumber": 23,
+    "step": 282,
+    "lon": 146.51,
+    "lat": 12.55,
+    "pres": 1001.6,
+    "wind": 10.493759999999998,
+    "clusters_id": 1
+  },
+  {
+    "tcID": "2025100912_I-18WP_I-18_fnv3-gen",
+    "ensembleNumber": 24,
+    "step": 180,
+    "lon": 128.92,
+    "lat": 12.83,
+    "pres": 1008.7,
+    "wind": 13.322959999999998,
+    "clusters_id": 0
+  },
+  {
+    "tcID": "2025100912_I-26WP_I-26_fnv3-gen",
+    "ensembleNumber": 24,
+    "step": 240,
+    "lon": 152.3,
+    "lat": 18.7,
+    "pres": 1008,
+    "wind": 12.0884,
+    "clusters_id": 1
+  },
+  {
+    "tcID": "2025100912_I-23WP_I-23_fnv3-gen",
+    "ensembleNumber": 25,
+    "step": 222,
+    "lon": 124.08,
+    "lat": 15.87,
+    "pres": 1002.6,
+    "wind": 14.866159999999999,
+    "clusters_id": 0
+  },
+  {
+    "tcID": "2025100912_I-30WP_I-30_fnv3-gen",
+    "ensembleNumber": 25,
+    "step": 258,
+    "lon": 159.99,
+    "lat": 19.69,
+    "pres": 1006.8,
+    "wind": 9.15632,
+    "clusters_id": 1
+  },
+  {
+    "tcID": "2025100912_I-17WP_I-17_fnv3-gen",
+    "ensembleNumber": 26,
+    "step": 156,
+    "lon": 133.16,
+    "lat": 11.88,
+    "pres": 1007.6,
+    "wind": 8.89912,
+    "clusters_id": 0
+  },
+  {
+    "tcID": "2025100912_I-22WP_I-22_fnv3-gen",
+    "ensembleNumber": 27,
+    "step": 240,
+    "lon": 116.66,
+    "lat": 14.03,
+    "pres": 1005.3,
+    "wind": 12.0884,
+    "clusters_id": 0
+  },
+  {
+    "tcID": "2025100912_I-23WP_I-23_fnv3-gen",
+    "ensembleNumber": 27,
+    "step": 258,
+    "lon": 151.81,
+    "lat": 22.17,
+    "pres": 1010.2,
+    "wind": 9.67072,
+    "clusters_id": 1
+  },
+  {
+    "tcID": "2025100912_I-22WP_I-22_fnv3-gen",
+    "ensembleNumber": 28,
+    "step": 192,
+    "lon": 135.91,
+    "lat": 20.12,
+    "pres": 1004.6,
+    "wind": 16.203599999999998,
+    "clusters_id": 0
+  },
+  {
+    "tcID": "2025100912_I-19WP_I-19_fnv3-gen",
+    "ensembleNumber": 29,
+    "step": 228,
+    "lon": 126.58,
+    "lat": 21.72,
+    "pres": 1000.4,
+    "wind": 16.10072,
+    "clusters_id": 0
+  },
+  {
+    "tcID": "2025100912_I-16WP_I-16_fnv3-gen",
+    "ensembleNumber": 30,
+    "step": 210,
+    "lon": 128.4,
+    "lat": 19.99,
+    "pres": 1007.7,
+    "wind": 9.61928,
+    "clusters_id": 0
+  },
+  {
+    "tcID": "2025100912_I-21WP_I-21_fnv3-gen",
+    "ensembleNumber": 31,
+    "step": 192,
+    "lon": 132.54,
+    "lat": 16.58,
+    "pres": 1002.2,
+    "wind": 12.191279999999999,
+    "clusters_id": 0
+  },
+  {
+    "tcID": "2025100912_I-16WP_I-16_fnv3-gen",
+    "ensembleNumber": 32,
+    "step": 168,
+    "lon": 132.01,
+    "lat": 13.94,
+    "pres": 1005.9,
+    "wind": 10.08224,
+    "clusters_id": 0
+  },
+  {
+    "tcID": "2025100912_I-20WP_I-20_fnv3-gen",
+    "ensembleNumber": 32,
+    "step": 192,
+    "lon": 149.1,
+    "lat": 10.02,
+    "pres": 1007.7,
+    "wind": 10.0308,
+    "clusters_id": 9999
+  },
+  {
+    "tcID": "2025100912_I-10WP_I-10_fnv3-gen",
+    "ensembleNumber": 33,
+    "step": 102,
+    "lon": 125.08,
+    "lat": 15.92,
+    "pres": 1003.7,
+    "wind": 15.84352,
+    "clusters_id": 9999
+  },
+  {
+    "tcID": "2025100912_I-15WP_I-15_fnv3-gen",
+    "ensembleNumber": 33,
+    "step": 174,
+    "lon": 135.32,
+    "lat": 20.67,
+    "pres": 1005.9,
+    "wind": 11.831199999999999,
+    "clusters_id": 0
+  },
+  {
+    "tcID": "2025100912_I-12WP_I-12_fnv3-gen",
+    "ensembleNumber": 34,
+    "step": 180,
+    "lon": 133.6,
+    "lat": 18.29,
+    "pres": 1005.5,
+    "wind": 12.602799999999998,
+    "clusters_id": 0
+  },
+  {
+    "tcID": "2025100912_I-16WP_I-16_fnv3-gen",
+    "ensembleNumber": 35,
+    "step": 162,
+    "lon": 136.81,
+    "lat": 15.61,
+    "pres": 1004.5,
+    "wind": 9.979359999999998,
+    "clusters_id": 0
+  },
+  {
+    "tcID": "2025100912_I-12WP_I-12_fnv3-gen",
+    "ensembleNumber": 36,
+    "step": 156,
+    "lon": 131.79,
+    "lat": 13.67,
+    "pres": 1007.1,
+    "wind": 8.89912,
+    "clusters_id": 0
+  },
+  {
+    "tcID": "2025100912_I-16WP_I-16_fnv3-gen",
+    "ensembleNumber": 37,
+    "step": 204,
+    "lon": 126.68,
+    "lat": 17.03,
+    "pres": 1002.3,
+    "wind": 16.975199999999997,
+    "clusters_id": 0
+  },
+  {
+    "tcID": "2025100912_I-22WP_I-22_fnv3-gen",
+    "ensembleNumber": 37,
+    "step": 264,
+    "lon": 141,
+    "lat": 21.72,
+    "pres": 1006.2,
+    "wind": 9.362079999999999,
+    "clusters_id": 1
+  },
+  {
+    "tcID": "2025100912_I-16WP_I-16_fnv3-gen",
+    "ensembleNumber": 40,
+    "step": 174,
+    "lon": 135.62,
+    "lat": 16.36,
+    "pres": 1001.7,
+    "wind": 13.477279999999999,
+    "clusters_id": 0
+  },
+  {
+    "tcID": "2025100912_I-05WP_I-05_fnv3-gen",
+    "ensembleNumber": 41,
+    "step": 186,
+    "lon": 132.86,
+    "lat": 19.88,
+    "pres": 1006.7,
+    "wind": 11.934079999999998,
+    "clusters_id": 0
+  },
+  {
+    "tcID": "2025100912_I-22WP_I-22_fnv3-gen",
+    "ensembleNumber": 42,
+    "step": 234,
+    "lon": 121.65,
+    "lat": 20.53,
+    "pres": 1005.9,
+    "wind": 13.580159999999998,
+    "clusters_id": 0
+  },
+  {
+    "tcID": "2025100912_I-25WP_I-25_fnv3-gen",
+    "ensembleNumber": 42,
+    "step": 270,
+    "lon": 142.3,
+    "lat": 15.91,
+    "pres": 1005.2,
+    "wind": 12.962879999999998,
+    "clusters_id": 1
+  },
+  {
+    "tcID": "2025100912_I-13WP_I-13_fnv3-gen",
+    "ensembleNumber": 43,
+    "step": 192,
+    "lon": 130.51,
+    "lat": 17.56,
+    "pres": 1003.2,
+    "wind": 14.763279999999998,
+    "clusters_id": 0
+  },
+  {
+    "tcID": "2025100912_I-12WP_I-12_fnv3-gen",
+    "ensembleNumber": 46,
+    "step": 144,
+    "lon": 133.69,
+    "lat": 15,
+    "pres": 1003.3,
+    "wind": 16.25504,
+    "clusters_id": 0
+  },
+  {
+    "tcID": "2025100912_I-13WP_I-13_fnv3-gen",
+    "ensembleNumber": 47,
+    "step": 204,
+    "lon": 130.98,
+    "lat": 19.07,
+    "pres": 1005,
+    "wind": 10.08224,
+    "clusters_id": 0
+  },
+  {
+    "tcID": "2025100912_I-14WP_I-14_fnv3-gen",
+    "ensembleNumber": 49,
+    "step": 174,
+    "lon": 136.92,
+    "lat": 15.79,
+    "pres": 1002.5,
+    "wind": 14.30032,
+    "clusters_id": 0
+  }
+]

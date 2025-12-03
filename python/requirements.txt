@@ -1,0 +1,20 @@
+# FNV3台风集合预报路径绘制所需的Python依赖包
+
+# 核心绘图库
+matplotlib>=3.5.0
+cartopy>=0.20.0
+
+# 数据处理
+numpy>=1.21.0
+
+# 可选：如果需要更好的中文字体支持
+# fonttools>=4.0.0
+
+# 安装说明：
+# pip install -r requirements.txt
+#
+# 注意：cartopy可能需要额外的系统依赖，如果安装失败，请参考：
+# https://scitools.org.uk/cartopy/docs/latest/installing.html
+#
+# 对于Windows用户，建议使用conda安装：
+# conda install -c conda-forge cartopy matplotlib numpy

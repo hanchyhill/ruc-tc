@@ -1,0 +1,20 @@
+1. filter "basinShort2"为"WP"的数据，记为cyclones_WP_list
+2. 从"tracks"中，提取每个"track"的第一个元素的元素，并附带上"ensembleNumber"，"tcID"，重组为一个新的数组，track0_info_list
+
+接下来，需要给track0_info_list中的各个点位进行聚类分析，使用DSCAN方法进行聚类，使用到的第三方库是sdbscan, 仓库地址是https://www.npmjs.com/package/sdbscan。
+
+数据处理规则如下
+
+把"step", "lon", "lat" 转为三维点数组，其中"step"转换为等效经纬度，计算方法如下
+step_axis = step*20/110
+这样就构成三维点坐标
+point = [lon ,lat, step_axis]
+把这些点构成点集合 point_list
+进行聚类分析let res = sdbscan(point_list,10,20);
+
+根据分组信息，在track0_info_list中添加分组属性，记为clusters_id, 如果此点属于noise，则clusters_id记为9999
+
+继续完成任务，在得到track0_info_list的clusters_id之后，匹配会原来的cyclones_WP_list的每个tracks当中，并且按照clusters_id重新聚合拥有相同clusters_id的track，构成新的tracks_list数组，并输出tracks_list。
+
+==============
+继续完成任务，

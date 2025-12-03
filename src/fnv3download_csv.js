@@ -8,7 +8,8 @@ dayjs.extend(utc);
 dayjs.extend(customParseFormat);
 const fs = require('fs');
 const path = require('path');
-const {processFNV3CSVDataEnhanced} = require('./resolve.CSV_fnv3.js');
+const {processFNV3CSVDataEnhanced, processFNV3CSVData} = require('./resolve.CSV_fnv3.js');
+const { processWPCycloneCluster } = require('./lib/cluster');
 const schedule = require('node-schedule');
 const {connect,initSchemas} = require('./db/initDB.js');
 const process = require('process');
@@ -145,12 +146,20 @@ async function downloadData(date){
         // 保存数据
         const filePath = saveDataToFile(tcfa_raw, csv_cyclogenesis_file_name, timeStr, "csv_cyclogenesis");
         const processedData = processFNV3CSVDataEnhanced(filePath);
+        // 仅保留数字(0-9)开头的cycloneName的记录
+        processedData.data = processedData.data.filter(item => /^[0-9]/.test(item.cycloneName));
+        
         const mgTClist = processedData.data;
         for(let mgTC of mgTClist){
             save2DB(mgTC).catch(err=>{throw err});
         }
-
-        return processedData;
+        const basicResult = processFNV3CSVData(filePath);
+        const clusterResult = processWPCycloneCluster(basicResult.data);
+        const clusterData = clusterResult.tracks_list_enhanced.data;
+        for(let cluster of clusterData){
+            save2DB(cluster).catch(err=>{throw err});
+        }
+        return clusterData;
     } catch (error) {
         console.error(`Failed to download data for ${date.format('YYYY-MM-DD HH:mm:ss')}:`, error.message);
         return null;

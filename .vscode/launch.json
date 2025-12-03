@@ -7,6 +7,12 @@
     {
       "type": "node",
       "request": "launch",
+      "name": "node运行当前文件",
+      "program": "${file}"
+    },
+    {
+      "type": "node",
+      "request": "launch",
       "name": "newDownload",
       "program": "${workspaceFolder}\\src\\newDownload.js"
     },
