@@ -54,7 +54,7 @@ const fnv3Config = {
     {
       type:"ensembleForecast",
       filter(str='AP01'){// AC00 APxx
-        const reg =  /.*?(\d{2})/;
+        const reg =  /.*?(\d{2}$)/;
         const result = str.match(reg);// Array ["EM01", "01"]
         if(result){
           return {
