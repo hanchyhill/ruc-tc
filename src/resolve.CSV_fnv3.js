@@ -144,7 +144,14 @@ function trans2mongoFormat(sortList = []) {
   let fc0 = sortList[0];
   let newFormat = extractMetaInfo(fc0);
   let newTracks = sortList.map(fc => {
-    let track = fc.trackList.map(track => [track.step, [track.lon, track.lat], track.pres, track.wind]);
+    let track = fc.trackList.map(track => [
+      track.step,
+      [track.lon, track.lat],
+      track.pres,
+      track.wind,
+      track.rmw,
+      track.windRadiusInfo
+    ]);
     let fcType = fc.type.type;
     let ensembleNumber = fc.type.ensembleNumber;
     return {
@@ -291,6 +298,48 @@ function buildRecordFromCSV(item = {}, index = 0) {
   const windKnots = Number(item.maximum_sustained_wind_speed_knots);
   const presValue = Number(item.minimum_sea_level_pressure_hpa);
 
+  // 解析最大风速半径（km转为m）
+  const rmwKm = Number(item.radius_of_maximum_winds_km);
+  const rmw = Number.isFinite(rmwKm) ? rmwKm * 1000 : NaN;
+
+  // 解析风圈数据（km转为m）
+  const r34_ne = Number(item.radius_34_knot_winds_ne_km);
+  const r34_se = Number(item.radius_34_knot_winds_se_km);
+  const r34_sw = Number(item.radius_34_knot_winds_sw_km);
+  const r34_nw = Number(item.radius_34_knot_winds_nw_km);
+
+  const r50_ne = Number(item.radius_50_knot_winds_ne_km);
+  const r50_se = Number(item.radius_50_knot_winds_se_km);
+  const r50_sw = Number(item.radius_50_knot_winds_sw_km);
+  const r50_nw = Number(item.radius_50_knot_winds_nw_km);
+
+  const r64_ne = Number(item.radius_64_knot_winds_ne_km);
+  const r64_se = Number(item.radius_64_knot_winds_se_km);
+  const r64_sw = Number(item.radius_64_knot_winds_sw_km);
+  const r64_nw = Number(item.radius_64_knot_winds_nw_km);
+
+  // 构建风圈数组，km转为m
+  const windRadiusInfo = [
+    [18,
+      Number.isFinite(r34_ne) ? r34_ne * 1000 : 0,
+      Number.isFinite(r34_se) ? r34_se * 1000 : 0,
+      Number.isFinite(r34_sw) ? r34_sw * 1000 : 0,
+      Number.isFinite(r34_nw) ? r34_nw * 1000 : 0
+    ],
+    [26,
+      Number.isFinite(r50_ne) ? r50_ne * 1000 : 0,
+      Number.isFinite(r50_se) ? r50_se * 1000 : 0,
+      Number.isFinite(r50_sw) ? r50_sw * 1000 : 0,
+      Number.isFinite(r50_nw) ? r50_nw * 1000 : 0
+    ],
+    [33,
+      Number.isFinite(r64_ne) ? r64_ne * 1000 : 0,
+      Number.isFinite(r64_se) ? r64_se * 1000 : 0,
+      Number.isFinite(r64_sw) ? r64_sw * 1000 : 0,
+      Number.isFinite(r64_nw) ? r64_nw * 1000 : 0
+    ]
+  ];
+
   return {
     basinshort,
     number,
@@ -301,6 +350,8 @@ function buildRecordFromCSV(item = {}, index = 0) {
     lon,
     wind: Number.isFinite(windKnots) ? windKnots * WIND_KNOTS_TO_MS : NaN,
     pres: Number.isFinite(presValue) ? presValue : NaN,
+    rmw,
+    windRadiusInfo,
     trackId,
   };
 }
@@ -453,7 +504,7 @@ function processFNV3CSVDataEnhanced(filePath, ins = 'fnv3-gen') {
 
 function mainFNV3CSV() {
   // const filePath = path.resolve(__dirname, '../demo/FNV3_2025_09_27T18_00_paired.csv');
-  const filePath = path.resolve(__dirname, '../demo/FNV3_2025_10_09T12_00_cyclogenesis.csv');
+  const filePath = path.resolve(__dirname, '../demo/FNV3_2025_09_27T18_00_cyclogenesis.csv');
   
   console.log(`Starting to process FNV3 CSV file: ${filePath}`);
   console.log('='.repeat(60));
