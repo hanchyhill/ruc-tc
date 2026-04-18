@@ -105,15 +105,44 @@ yarn install
 - `lat` / `lon`
 - `maximum_sustained_wind_speed_knots`
 - `minimum_sea_level_pressure_hpa`
+- `radius_of_maximum_winds_km`（最大风速半径）
+- `radius_34_knot_winds_ne_km` / `se_km` / `sw_km` / `nw_km`（8级风圈四象限）
+- `radius_50_knot_winds_ne_km` / `se_km` / `sw_km` / `nw_km`（10级风圈四象限）
+- `radius_64_knot_winds_ne_km` / `se_km` / `sw_km` / `nw_km`（12级风圈四象限）
 
-转换后的轨迹点为统一格式：
+转换后的轨迹点为统一格式（6元素数组）：
 
-`[step小时, [lon, lat], pres(hPa), wind(m/s)]`
+```javascript
+[
+  step,                    // 索引0: 预报时效（小时）
+  [lon, lat],              // 索引1: 台风中心经纬度
+  pres,                    // 索引2: 中心最低气压（hPa）
+  wind,                    // 索引3: 中心附近最大风速（m/s）
+  rmw,                     // 索引4: 最大风速半径（米）
+  windRadiusInfo           // 索引5: 风圈数据数组
+]
+```
 
-说明：
+**索引5 风圈数据结构**：
+
+```javascript
+[
+  [18, r_ne, r_se, r_sw, r_nw],  // 8级风圈（18m/s，对应34节）
+  [26, r_ne, r_se, r_sw, r_nw],  // 10级风圈（26m/s，对应50节）
+  [33, r_ne, r_se, r_sw, r_nw]   // 12级风圈（33m/s，对应64节）
+]
+```
+
+每个子数组包含5个元素：
+- 索引0：风速阈值（m/s）
+- 索引1-4：东北、东南、西南、西北四象限的风圈半径（米）
+
+**单位转换说明**：
 
 - `step = valid_time - init_time`（小时）
-- 风速由节转换为米每秒：`knots * 0.5144`
+- 风速：节 → 米/秒，`knots × 0.5144`
+- 最大风速半径：千米 → 米，`km × 1000`
+- 风圈半径：千米 → 米，`km × 1000`，无效值记为 `0`
 
 ### 5.3 解析输出方法
 

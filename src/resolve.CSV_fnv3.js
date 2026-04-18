@@ -318,27 +318,38 @@ function buildRecordFromCSV(item = {}, index = 0) {
   const r64_sw = Number(item.radius_64_knot_winds_sw_km);
   const r64_nw = Number(item.radius_64_knot_winds_nw_km);
 
-  // 构建风圈数组，km转为m
-  const windRadiusInfo = [
-    [18,
-      Number.isFinite(r34_ne) ? r34_ne * 1000 : 0,
-      Number.isFinite(r34_se) ? r34_se * 1000 : 0,
-      Number.isFinite(r34_sw) ? r34_sw * 1000 : 0,
-      Number.isFinite(r34_nw) ? r34_nw * 1000 : 0
-    ],
-    [26,
-      Number.isFinite(r50_ne) ? r50_ne * 1000 : 0,
-      Number.isFinite(r50_se) ? r50_se * 1000 : 0,
-      Number.isFinite(r50_sw) ? r50_sw * 1000 : 0,
-      Number.isFinite(r50_nw) ? r50_nw * 1000 : 0
-    ],
-    [33,
-      Number.isFinite(r64_ne) ? r64_ne * 1000 : 0,
-      Number.isFinite(r64_se) ? r64_se * 1000 : 0,
-      Number.isFinite(r64_sw) ? r64_sw * 1000 : 0,
-      Number.isFinite(r64_nw) ? r64_nw * 1000 : 0
-    ]
+  // 构建风圈数组，km转为m，仅保留至少有一个象限非零的档位
+  const windRadiusInfo = [];
+
+  const r34 = [
+    Number.isFinite(r34_ne) ? r34_ne * 1000 : 0,
+    Number.isFinite(r34_se) ? r34_se * 1000 : 0,
+    Number.isFinite(r34_sw) ? r34_sw * 1000 : 0,
+    Number.isFinite(r34_nw) ? r34_nw * 1000 : 0
   ];
+  if (r34.some(v => v > 0)) {
+    windRadiusInfo.push([18, ...r34]);
+  }
+
+  const r50 = [
+    Number.isFinite(r50_ne) ? r50_ne * 1000 : 0,
+    Number.isFinite(r50_se) ? r50_se * 1000 : 0,
+    Number.isFinite(r50_sw) ? r50_sw * 1000 : 0,
+    Number.isFinite(r50_nw) ? r50_nw * 1000 : 0
+  ];
+  if (r50.some(v => v > 0)) {
+    windRadiusInfo.push([26, ...r50]);
+  }
+
+  const r64 = [
+    Number.isFinite(r64_ne) ? r64_ne * 1000 : 0,
+    Number.isFinite(r64_se) ? r64_se * 1000 : 0,
+    Number.isFinite(r64_sw) ? r64_sw * 1000 : 0,
+    Number.isFinite(r64_nw) ? r64_nw * 1000 : 0
+  ];
+  if (r64.some(v => v > 0)) {
+    windRadiusInfo.push([33, ...r64]);
+  }
 
   return {
     basinshort,
