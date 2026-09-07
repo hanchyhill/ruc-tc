@@ -100,6 +100,8 @@ const fnv3Config = {
   ensNumber:51,
 }
 
+const wnv3Config = Object.assign({}, fnv3Config, { ins: 'WNV3' });
+
 const ncepEmcConfig = {
   typeList : [
     {
@@ -510,6 +512,8 @@ function selectConfig(ins='ecmwf'){
     return fnv3Config;
   }else if(ins==='fnv3-gen') {
     return fnv3Config;
+  }else if(ins==='WNV3' || ins==='wnv3') {
+    return wnv3Config;
   }
   else{
     throw new TypeError('not valid ins');

@@ -11,7 +11,7 @@ dayjs.extend(customParseFormat);
  * @param {Array} clusterResult - 聚类结果数组
  * @returns {Object} 增强格式的聚类结果
  */
-function transCluster2EnhancedFormat(clusterResult) {
+function transCluster2EnhancedFormat(clusterResult, ins = "fnv3-gen") {
   // clusterResult.filter(v => v.clusters_id !== 9999);
   let enhancedData = [];
   clusterResult.forEach(v => {
@@ -20,7 +20,6 @@ function transCluster2EnhancedFormat(clusterResult) {
     const clusterIdStr = String(v['clusters_id']).padStart(2, '0');
     const cycloneName = `C-${clusterIdStr}${basinShort2}`;
     const cycloneNumber = `C-${clusterIdStr}`;
-    const ins = "fnv3-gen"
     const initTime = basic_info_0['initTime'];
     const tcID = `${dayjs.utc(initTime).format('YYYYMMDDHH')}_${cycloneName}_${cycloneNumber}_${ins}`;
     let tracks = v.tracks.map(item=>{
@@ -60,7 +59,7 @@ function transCluster2EnhancedFormat(clusterResult) {
  * @returns {Object} 包含处理结果的对象
  */
 function processWPCycloneCluster(cycloneDataList, options = {}) {
-  const { epsilon = 10, baseMinPoints = 4 } = options;
+  const { epsilon = 10, baseMinPoints = 4, ins = "fnv3-gen" } = options;
 
   // Task 1: Filter cyclones with basinShort2 = "WP"
   const cyclones_WP_list = cycloneDataList.filter(
@@ -187,7 +186,7 @@ function processWPCycloneCluster(cycloneDataList, options = {}) {
   }
 
   // Task 5: Transform to enhanced format
-  const tracks_list_enhanced = transCluster2EnhancedFormat(tracks_list);
+  const tracks_list_enhanced = transCluster2EnhancedFormat(tracks_list, ins);
 
   return {
     cyclones_WP_list,

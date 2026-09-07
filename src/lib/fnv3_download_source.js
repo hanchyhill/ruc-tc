@@ -37,6 +37,18 @@ function buildOriginalUrl(resourcePath) {
     return `${BASE_URL_ORIGINAL}${resourcePath}`;
 }
 
+function buildCycloneFileNames(model, timeStr) {
+    return {
+        tcfa: `${model}_${timeStr}_atcf_a_deck.txt`,
+        paired: `${model}_${timeStr}_paired.csv`,
+        cyclogenesis: `${model}_${timeStr}_cyclogenesis.csv`,
+    };
+}
+
+function buildCycloneResourcePath(model, productPath, fileName) {
+    return `/science/weatherlab/download/cyclones/${model}/${productPath}/${fileName}`;
+}
+
 function buildDownloadRequest(resourcePath, baseUrl) {
     const originalUrl = buildOriginalUrl(resourcePath);
     if (baseUrl === BASE_URL_PROXY) {
@@ -62,4 +74,6 @@ module.exports = {
     BASE_URL_PROXY,
     buildOriginalUrl,
     buildDownloadRequest,
+    buildCycloneFileNames,
+    buildCycloneResourcePath,
 };
