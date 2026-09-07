@@ -13,6 +13,12 @@ const { processWPCycloneCluster } = require('./lib/cluster');
 const schedule = require('node-schedule');
 const {connect,initSchemas} = require('./db/initDB.js');
 const process = require('process');
+const {
+    BASE_URL_MIRROR,
+    BASE_URL_ORIGINAL,
+    BASE_URL_PROXY,
+    buildDownloadRequest,
+} = require('./lib/fnv3_download_source.js');
 
 let save2DB;
 // 判断当前环境是 Windows 还是 Linux
@@ -23,6 +29,9 @@ if(isWindows){
 }else{
     BASE_DIR = "/var/www/html/data/cyclone/fnv3"; // atcf_ensemble
 }
+
+// 默认走 proxy.minhill.com；回退可改为 BASE_URL_MIRROR 或 BASE_URL_ORIGINAL
+var BASE_URL = BASE_URL_PROXY;
 
 function saveDataToFile(data, filename, timeStr, type="atcf_ensemble") {
     const base_path = BASE_DIR;
@@ -53,24 +62,24 @@ function checkFileExists(filename, timeStr, type="atcf_ensemble") {
 
 async function downloadOtherData(date){
     const timeStr = date.format('YYYY_MM_DDTHH_00');
-    let tcfa_file_name = `FNV3_${timeStr}_atcf_a_deck.txt`;
-    let csv_pair_file_name = `FNV3_${timeStr}_paired.csv`;
-    let csv_cyclogenesis_file_name = `FNV3_${timeStr}_cyclogenesis.csv`;
+    let tcfa_file_name = `OPER_${timeStr}_atcf_a_deck.txt`;
+    let csv_pair_file_name = `OPER_${timeStr}_paired.csv`;
+    let csv_cyclogenesis_file_name = `OPER_${timeStr}_cyclogenesis.csv`;
     // 检查文件是否已存在
     
 
-    // demo url            http://deepmind.gdmo.gq/science/weatherlab/download/cyclones/FNV3/ensemble/paired/atcf/FNV3_2025_09_28T00_00_atcf_a_deck.txt
-    let url_tcfa_ensemble_mirror = `http://deepmind.gdmo.gq/science/weatherlab/download/cyclones/FNV3/ensemble/paired/atcf/${tcfa_file_name}`;
-    let url_tcfa_ensemble_mean_mirror = `http://deepmind.gdmo.gq/science/weatherlab/download/cyclones/FNV3/ensemble_mean/paired/atcf/${tcfa_file_name}`
-    let url_csv_pair_ensemble_mirror = `http://deepmind.gdmo.gq/science/weatherlab/download/cyclones/FNV3/ensemble/paired/csv/${csv_pair_file_name}`;
-    let url_csv_pair_mean_mirror = `http://deepmind.gdmo.gq/science/weatherlab/download/cyclones/FNV3/ensemble_mean/paired/csv/${csv_pair_file_name}`;
-    // let url_csv_cyclogenesis_mirror = `http://deepmind.gdmo.gq/science/weatherlab/download/cyclones/FNV3/ensemble/cyclogenesis/csv/${csv_cyclogenesis_file_name}`;
+    // original: https://deepmind.google.com/science/weatherlab/download/cyclones/OPER/ensemble/paired/atcf/OPER_2026_09_06T18_00_atcf_a_deck.txt
+    let req_tcfa_ensemble = buildDownloadRequest(`/science/weatherlab/download/cyclones/OPER/ensemble/paired/atcf/${tcfa_file_name}`, BASE_URL);
+    let req_tcfa_ensemble_mean = buildDownloadRequest(`/science/weatherlab/download/cyclones/OPER/ensemble_mean/paired/atcf/${tcfa_file_name}`, BASE_URL);
+    let req_csv_pair_ensemble = buildDownloadRequest(`/science/weatherlab/download/cyclones/OPER/ensemble/paired/csv/${csv_pair_file_name}`, BASE_URL);
+    let req_csv_pair_mean = buildDownloadRequest(`/science/weatherlab/download/cyclones/OPER/ensemble_mean/paired/csv/${csv_pair_file_name}`, BASE_URL);
+    // let req_csv_cyclogenesis = buildDownloadRequest(`/science/weatherlab/download/cyclones/OPER/ensemble/cyclogenesis/csv/${csv_cyclogenesis_file_name}`, BASE_URL);
     try {
         if (checkFileExists(tcfa_file_name, timeStr, "atcf_ensemble")) {
             console.log(`File ${tcfa_file_name} already exists for ${timeStr}, skipping download`);
         }else{
             console.log('准备下载 TCFA Ensemble:' + tcfa_file_name)
-            let tcfa_raw = await rp(url_tcfa_ensemble_mirror);
+            let tcfa_raw = await rp(req_tcfa_ensemble);
             const filePath = saveDataToFile(tcfa_raw, tcfa_file_name, timeStr, "atcf_ensemble");
         }
         
@@ -83,7 +92,7 @@ async function downloadOtherData(date){
             console.log(`File ${tcfa_file_name} already exists for ${timeStr}, skipping download`);
         }else{
             console.log('准备下载 TCFA Ensemble Mean:' + tcfa_file_name)
-            let tcfa_raw = await rp(url_tcfa_ensemble_mean_mirror);
+            let tcfa_raw = await rp(req_tcfa_ensemble_mean);
             const filePath = saveDataToFile(tcfa_raw, tcfa_file_name, timeStr, "atcf_ensemble_mean");
         }
     } catch (error) {
@@ -95,7 +104,7 @@ async function downloadOtherData(date){
             console.log(`File ${csv_pair_file_name} already exists for ${timeStr}, skipping download`);
         }else{
             console.log('准备下载 CSV Pair Ensemble:' + csv_pair_file_name)
-            let csv_pair_raw = await rp(url_csv_pair_ensemble_mirror);
+            let csv_pair_raw = await rp(req_csv_pair_ensemble);
             const filePath = saveDataToFile(csv_pair_raw, csv_pair_file_name, timeStr, "csv_pair_ensemble");
         }
     } catch (error) {
@@ -107,7 +116,7 @@ async function downloadOtherData(date){
             console.log(`File ${csv_pair_file_name} already exists for ${timeStr}, skipping download`);
         }else{
             console.log('准备下载 CSV Pair Mean:' + csv_pair_file_name)
-            let csv_pair_raw = await rp(url_csv_pair_mean_mirror);
+            let csv_pair_raw = await rp(req_csv_pair_mean);
             const filePath = saveDataToFile(csv_pair_raw, csv_pair_file_name, timeStr, "csv_pair_ensemble_mean");
         }
     } catch (error) {
@@ -116,7 +125,7 @@ async function downloadOtherData(date){
     }
     // try {
     //     console.log('CSV Cyclogenesis:' + csv_cyclogenesis_file_name)
-    //     let csv_cyclogenesis_raw = await rp(url_csv_cyclogenesis_mirror);
+    //     let csv_cyclogenesis_raw = await rp(req_csv_cyclogenesis);
     //     const filePath = saveDataToFile(csv_cyclogenesis_raw, csv_cyclogenesis_file_name, timeStr, "ensemble");
     // } catch (error) {
     //     console.error(`Failed to download data for ${date.format('YYYY-MM-DD HH:mm:ss')}:`, error.message);
@@ -129,18 +138,17 @@ async function downloadData(date){
     try {
 
         const timeStr = date.format('YYYY_MM_DDTHH_00');
-        let csv_cyclogenesis_file_name = `FNV3_${timeStr}_cyclogenesis.csv`;
+        let csv_cyclogenesis_file_name = `OPER_${timeStr}_cyclogenesis.csv`;
         // 检查文件是否已存在
         if (checkFileExists(csv_cyclogenesis_file_name, timeStr, "csv_cyclogenesis")) {
             console.log(`File ${csv_cyclogenesis_file_name} already exists for ${timeStr}, skipping download`);
             return null;
         }
        
-        // demo url            http://deepmind.gdmo.gq/science/weatherlab/download/cyclones/FNV3/ensemble/paired/atcf/FNV3_2025_09_28T00_00_atcf_a_deck.txt
-        // let url_tcfa_mirror = `http://deepmind.gdmo.gq/science/weatherlab/download/cyclones/FNV3/ensemble/paired/atcf/FNV3_${timeStr}_atcf_a_deck.txt`
-        let url_csv_cyclogenesis_mirror = `http://deepmind.gdmo.gq/science/weatherlab/download/cyclones/FNV3/ensemble/cyclogenesis/csv/${csv_cyclogenesis_file_name}`;
-        console.log('准备下载 CSV Cyclogenesis:' + url_csv_cyclogenesis_mirror)
-        let tcfa_raw = await rp(url_csv_cyclogenesis_mirror)
+        // original: https://deepmind.google.com/science/weatherlab/download/cyclones/OPER/ensemble/cyclogenesis/csv/OPER_2026_09_06T18_00_cyclogenesis.csv
+        const req_csv_cyclogenesis = buildDownloadRequest(`/science/weatherlab/download/cyclones/OPER/ensemble/cyclogenesis/csv/${csv_cyclogenesis_file_name}`, BASE_URL);
+        console.log('准备下载 CSV Cyclogenesis:' + req_csv_cyclogenesis.uri)
+        let tcfa_raw = await rp(req_csv_cyclogenesis)
         // console.log(tcfa_raw)
 
         // 保存数据

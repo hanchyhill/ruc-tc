@@ -14,6 +14,7 @@ dayjs.extend(utc);
  */
 async function get_aifs(date = "2025101200", area = "WesternPacific") {
     const url = `https://www.smca.fun/api/tc_gis_tracks_cluster/?forecastType=cluster&model=aifs&date=${date}&area=${area}`;
+    console.log(url);
     const response = await rp(url);
     const data = JSON.parse(response);
     return data;

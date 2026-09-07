@@ -1,0 +1,340 @@
+{
+  "title": "FNV3 ATCF 统一 JSON 数据字段说明",
+  "version": "1.0.0",
+  "language": "zh-CN",
+  "scope": {
+    "downloadScript": "src/fnv3download.js",
+    "parser": "src/newResolveTCFA_fnv3.js",
+    "downloadProduct": "FNV3 ensemble paired ATCF a-deck",
+    "outputDescription": "fnv3download.js 下载并解析后，processedData.data 中每个气旋对象的格式；完整解析结果还包含下方的结果包装字段。",
+    "defaultInstitution": "fnv3",
+    "timeStandard": "UTC"
+  },
+  "result": {
+    "type": "object",
+    "description": "processFNV3DataEnhanced 返回的完整结果。fnv3download.js 实际写入数据库的是 result.data 中的每个元素。",
+    "fields": [
+      {
+        "name": "method",
+        "path": "method",
+        "type": "string",
+        "required": true,
+        "description": "数据处理方式。fnv3download.js 使用增强处理方式。",
+        "enum": ["enhanced"]
+      },
+      {
+        "name": "stormGroups",
+        "path": "stormGroups",
+        "type": "integer",
+        "required": true,
+        "description": "按风暴编号拆分并合并后的风暴分组数量。"
+      },
+      {
+        "name": "originalCount",
+        "path": "originalCount",
+        "type": "integer",
+        "required": true,
+        "description": "增强处理后、转换为统一格式前的预报记录数量。"
+      },
+      {
+        "name": "processedCount",
+        "path": "processedCount",
+        "type": "integer",
+        "required": true,
+        "description": "成功转换出的气旋对象数量，通常与 data.length 相同。"
+      },
+      {
+        "name": "data",
+        "path": "data",
+        "type": "array<object>",
+        "required": true,
+        "description": "气旋集合预报数据列表。"
+      }
+    ]
+  },
+  "cyclone": {
+    "type": "object",
+    "description": "data 数组中的单个气旋对象，也是 save2DB 写入 Cyclone 集合的主要数据对象。",
+    "fields": [
+      {
+        "name": "basinShort2",
+        "path": "data[].basinShort2",
+        "type": "string",
+        "required": true,
+        "description": "气旋所在海域的两字母缩写，直接取 ATCF 原始记录第 0 列。",
+        "examples": ["WP", "EP", "CP", "AL", "IO", "SH"]
+      },
+      {
+        "name": "cycloneName",
+        "path": "data[].cycloneName",
+        "type": "string",
+        "required": true,
+        "description": "项目内部生成的气旋名称，格式为 cycloneNumber + basinShort2。",
+        "example": "I-01EP"
+      },
+      {
+        "name": "cycloneNumber",
+        "path": "data[].cycloneNumber",
+        "type": "string",
+        "required": true,
+        "description": "ATCF 原始记录第 1 列中的风暴编号或标识。",
+        "examples": ["I-01", "01", "C-00"]
+      },
+      {
+        "name": "ins",
+        "path": "data[].ins",
+        "type": "string",
+        "required": true,
+        "description": "预报机构或数据源标识。通过 fnv3download.js 调用时使用解析器默认值 fnv3。",
+        "example": "fnv3"
+      },
+      {
+        "name": "initTime",
+        "path": "data[].initTime",
+        "type": "string",
+        "format": "date-time",
+        "required": true,
+        "description": "模式起报时间，由 ATCF 第 2 列 YYYYMMDDHH 解析而来；JSON.stringify 后为 ISO 8601 UTC 字符串。",
+        "example": "2025-09-27T18:00:00.000Z"
+      },
+      {
+        "name": "tcID",
+        "path": "data[].tcID",
+        "type": "string",
+        "required": true,
+        "description": "项目内部唯一标识，格式为 YYYYMMDDHH_cycloneName_cycloneNumber_ins。",
+        "example": "2025092718_I-01EP_I-01_fnv3"
+      },
+      {
+        "name": "tracks",
+        "path": "data[].tracks",
+        "type": "array<object>",
+        "required": true,
+        "description": "集合预报轨迹列表。确定性预报不放在该数组中，而是放入 detTrack；如果没有确定性预报，则 tracks 中保留全部可识别轨迹。"
+      },
+      {
+        "name": "controlIndex",
+        "path": "data[].controlIndex",
+        "type": "integer",
+        "required": true,
+        "description": "控制成员在生成的轨迹列表中的索引；未找到 ensembleNumber 为 0 的控制成员时为 -1。"
+      },
+      {
+        "name": "fillStatus",
+        "path": "data[].fillStatus",
+        "type": "integer",
+        "required": true,
+        "description": "轨迹组成状态标识。",
+        "enumDescription": {
+          "1": "只有确定性预报",
+          "2": "只有集合预报",
+          "3": "同时包含确定性预报和集合预报"
+        }
+      },
+      {
+        "name": "detTrack",
+        "path": "data[].detTrack",
+        "type": "object",
+        "required": false,
+        "description": "确定性预报轨迹对象。只有识别到 TGFS2、AVNO 或 AVNI 等确定性预报时才生成；字段结构与 tracks[] 相同。"
+      }
+    ],
+    "notGeneratedByThisPath": [
+      "maxWind",
+      "loc",
+      "detLoc",
+      "detIndex",
+      "basinShort",
+      "basin",
+      "fileName"
+    ],
+    "notGeneratedNote": "这些字段虽然存在于 MongoDB Cyclone schema 或其他数据源格式中，但当前 src/fnv3download.js + src/newResolveTCFA_fnv3.js 解析链路不会生成它们。"
+  },
+  "forecastTrack": {
+    "type": "object",
+    "description": "tracks 数组或 detTrack 中的一条预报轨迹。",
+    "fields": [
+      {
+        "name": "fcType",
+        "path": "data[].tracks[].fcType",
+        "type": "string",
+        "required": true,
+        "description": "预报类型。",
+        "enumDescription": {
+          "ensembleForecast": "集合成员预报",
+          "determineForecast": "确定性预报",
+          "ensembleMean": "集合平均预报"
+        }
+      },
+      {
+        "name": "ensembleNumber",
+        "path": "data[].tracks[].ensembleNumber",
+        "type": "integer",
+        "required": true,
+        "description": "集合成员编号。普通集合成员通常为非负数；确定性预报和集合平均预报使用负数内部编号。",
+        "examples": [0, 1, 50, -1, -2, -10]
+      },
+      {
+        "name": "track",
+        "path": "data[].tracks[].track",
+        "type": "array<array>",
+        "required": true,
+        "description": "按预报时效升序排列的轨迹点列表。"
+      }
+    ]
+  },
+  "trackPoint": {
+    "type": "array",
+    "tupleLength": 4,
+    "description": "单个轨迹点使用数组而不是对象表示，索引含义固定如下。",
+    "items": [
+      {
+        "index": 0,
+        "name": "step",
+        "type": "number",
+        "unit": "hour",
+        "description": "相对于 initTime 的预报时效，单位为小时。"
+      },
+      {
+        "index": 1,
+        "name": "position",
+        "type": "array<number>",
+        "tupleLength": 2,
+        "description": "气旋中心位置，格式为 [经度, 纬度]，单位为度。经度范围通常为 -180 到 180，纬度范围为 -90 到 90。",
+        "items": [
+          {
+            "index": 0,
+            "name": "longitude",
+            "type": "number",
+            "unit": "degree"
+          },
+          {
+            "index": 1,
+            "name": "latitude",
+            "type": "number",
+            "unit": "degree"
+          }
+        ]
+      },
+      {
+        "index": 2,
+        "name": "pressure",
+        "type": "number",
+        "unit": "hPa",
+        "description": "气旋中心最低海平面气压。"
+      },
+      {
+        "index": 3,
+        "name": "wind",
+        "type": "number",
+        "unit": "m/s",
+        "description": "气旋中心附近最大持续风速。解析器将原始 ATCF 中的节转换为米每秒，换算系数为 0.5144。"
+      }
+    ],
+    "missingValueNote": "源数据缺失或无法转换的数值在 JavaScript 对象中可能为 NaN；序列化为 JSON 时会表现为 null。"
+  },
+  "rawAtcfRecord": {
+    "type": "array<string>",
+    "description": "解析器实际使用的 ATCF 数据行前 10 列。原始 ATCF 可能包含更多列，但当前解析链路会忽略第 10 列之后的字段。",
+    "items": [
+      {
+        "index": 0,
+        "name": "basin",
+        "type": "string",
+        "description": "海域缩写，例如 WP、EP。输出到 basinShort2。"
+      },
+      {
+        "index": 1,
+        "name": "stormName",
+        "type": "string",
+        "description": "风暴编号或名称。输出到 cycloneNumber。"
+      },
+      {
+        "index": 2,
+        "name": "validTime",
+        "type": "string",
+        "format": "YYYYMMDDHH",
+        "description": "该原始记录的时间；同一风暴组的第一个记录时间被用作 initTime。"
+      },
+      {
+        "index": 3,
+        "name": "unused",
+        "type": "string",
+        "description": "当前解析器读取但不使用。"
+      },
+      {
+        "index": 4,
+        "name": "forecastTypeCode",
+        "type": "string",
+        "description": "预报类型代码，例如集合成员代码、TGFS2、AVNO、AVNI 或 AEMN。"
+      },
+      {
+        "index": 5,
+        "name": "forecastHour",
+        "type": "number",
+        "unit": "hour",
+        "description": "相对于起报时间的预报时效。"
+      },
+      {
+        "index": 6,
+        "name": "latitude",
+        "type": "string",
+        "format": "tenths-of-degree-with-hemisphere",
+        "description": "纬度，例如 118N；解析后除以 10，并按 N/S 设置正负号。"
+      },
+      {
+        "index": 7,
+        "name": "longitude",
+        "type": "string",
+        "format": "tenths-of-degree-with-hemisphere",
+        "description": "经度，例如 1404E；解析后除以 10，并按 E/W 设置正负号。"
+      },
+      {
+        "index": 8,
+        "name": "maximumSustainedWind",
+        "type": "number",
+        "unit": "knot",
+        "description": "最大持续风速；解析后转换为 wind 字段的 m/s。"
+      },
+      {
+        "index": 9,
+        "name": "minimumSeaLevelPressure",
+        "type": "number",
+        "unit": "hPa",
+        "description": "最低海平面气压；解析后转换为 pressure 字段。"
+      }
+    ]
+  },
+  "example": {
+    "method": "enhanced",
+    "stormGroups": 1,
+    "originalCount": 2,
+    "processedCount": 1,
+    "data": [
+      {
+        "basinShort2": "EP",
+        "cycloneName": "I-01EP",
+        "cycloneNumber": "I-01",
+        "ins": "fnv3",
+        "initTime": "2025-09-27T18:00:00.000Z",
+        "tcID": "2025092718_I-01EP_I-01_fnv3",
+        "tracks": [
+          {
+            "fcType": "ensembleForecast",
+            "ensembleNumber": 0,
+            "track": [
+              [
+                6,
+                [-108.6, 11.8],
+                1008,
+                15.432
+              ]
+            ]
+          }
+        ],
+        "controlIndex": 0,
+        "fillStatus": 2
+      }
+    ]
+  }
+}

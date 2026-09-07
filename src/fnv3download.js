@@ -12,6 +12,12 @@ const {processFNV3DataEnhanced} = require('./newResolveTCFA_fnv3.js');
 const schedule = require('node-schedule');
 const {connect,initSchemas} = require('./db/initDB.js');
 const process = require('process');
+const {
+    BASE_URL_MIRROR,
+    BASE_URL_ORIGINAL,
+    BASE_URL_PROXY,
+    buildDownloadRequest,
+} = require('./lib/fnv3_download_source.js');
 
 let save2DB;
 // 判断当前环境是 Windows 还是 Linux
@@ -23,11 +29,14 @@ if(isWindows){
     BASE_DIR = "/var/www/html/data/cyclone/fnv3/atcf_ensemble";
 }
 
+// 默认走 proxy.minhill.com；回退可改为 BASE_URL_MIRROR 或 BASE_URL_ORIGINAL
+var BASE_URL = BASE_URL_PROXY;
+
 function saveDataToFile(data, timeStr) {
     const base_path = BASE_DIR;
     // 从timeStr中提取年份和月份 (格式: YYYY_MM_DDTHH_00)
     const yearMonth = timeStr.substring(0, 7); // 提取 YYYY_MM
-    const fileName = `FNV3_${timeStr}_atcf_a_deck.txt`;
+    const fileName = `OPER_${timeStr}_atcf_a_deck.txt`;
     const filePath = path.join(base_path, yearMonth, fileName);
 
     // 确保目录存在
@@ -44,7 +53,7 @@ function checkFileExists(timeStr) {
     const base_path = BASE_DIR;
     // 从timeStr中提取年份和月份 (格式: YYYY_MM_DDTHH_00)
     const yearMonth = timeStr.substring(0, 7); // 提取 YYYY_MM
-    const fileName = `FNV3_${timeStr}_atcf_a_deck.txt`;
+    const fileName = `OPER_${timeStr}_atcf_a_deck.txt`;
     const filePath = path.join(base_path, yearMonth, fileName);
 
     return fs.existsSync(filePath);
@@ -60,10 +69,11 @@ async function downloadData(date){
             return null;
         }
 
-        // demo url            http://deepmind.gdmo.gq/science/weatherlab/download/cyclones/FNV3/ensemble/paired/atcf/FNV3_2025_09_28T00_00_atcf_a_deck.txt
-        let url_tcfa_mirror = `http://deepmind.gdmo.gq/science/weatherlab/download/cyclones/FNV3/ensemble/paired/atcf/FNV3_${timeStr}_atcf_a_deck.txt`
-        console.log(url_tcfa_mirror)
-        let tcfa_raw = await rp(url_tcfa_mirror)
+        // original: https://deepmind.google.com/science/weatherlab/download/cyclones/OPER/ensemble/paired/atcf/OPER_2026_09_06T18_00_atcf_a_deck.txt
+        const resourcePath = `/science/weatherlab/download/cyclones/OPER/ensemble/paired/atcf/OPER_${timeStr}_atcf_a_deck.txt`;
+        const downloadReq = buildDownloadRequest(resourcePath, BASE_URL);
+        console.log(downloadReq.uri)
+        let tcfa_raw = await rp(downloadReq)
         // console.log(tcfa_raw)
 
         // 保存数据
