@@ -430,15 +430,6 @@ function processWPCycloneClusterMemberExclusive(cycloneDataList, options = {}) {
       track: record.track
     }))
   }));
-  const enhancedData = tracks_list.map((group, index) =>
-    transCluster2EnhancedFormat([group], clusters[index][0].ins).data[0]);
-  const tracks_list_enhanced = {
-    method: 'enhanced',
-    stormGroups: enhancedData.length,
-    originalCount: tracks_list.length,
-    processedCount: enhancedData.length,
-    data: enhancedData
-  };
   const publicUnassigned = unassignedTracks.map(record => ({
     trackId: record.id, tcID: record.tcID, initTime: record.initTime, ins: record.ins,
     ensembleNumber: record.ensembleNumber, fcType: record.fcType,
@@ -463,13 +454,54 @@ function processWPCycloneClusterMemberExclusive(cycloneDataList, options = {}) {
       return { ...track, clusters_id: clusterByTrackId.has(id) ? clusterByTrackId.get(id) : 9999 };
     })
   }));
+  // C-9999 is an output bucket, not a member-exclusive storm cluster. Keep
+  // separate buckets per source and initialization time to preserve tcID.
+  const noiseByBatch = new Map();
+  for (const record of unassignedTracks) {
+    const initMillis = Date.parse(record.initTime);
+    const key = `${record.ins}|${Number.isFinite(initMillis) ?
+      new Date(initMillis).toISOString() : String(record.initTime)}`;
+    if (!noiseByBatch.has(key)) noiseByBatch.set(key, []);
+    noiseByBatch.get(key).push(record);
+  }
+  const noiseGroups = [];
+  for (const records of noiseByBatch.values()) {
+    const group = {
+      clusters_id: 9999,
+      tracks: records.map(record => ({
+        trackId: record.id,
+        tcID: record.tcID,
+        basinShort2: record.basinShort2,
+        initTime: record.initTime,
+        cycloneName: record.cycloneName,
+        ensembleNumber: record.ensembleNumber,
+        fcType: record.fcType,
+        track: record.track
+      }))
+    };
+    tracks_list.push(group);
+    noiseGroups.push({ group, ins: records[0].ins });
+  }
+  const enhancedData = [
+    ...clusters.map((records, index) =>
+      transCluster2EnhancedFormat([tracks_list[index]], records[0].ins).data[0]),
+    ...noiseGroups.map(({ group, ins }) =>
+      transCluster2EnhancedFormat([group], ins).data[0])
+  ];
+  const tracks_list_enhanced = {
+    method: 'enhanced',
+    stormGroups: enhancedData.length,
+    originalCount: tracks_list.length,
+    processedCount: enhancedData.length,
+    data: enhancedData
+  };
   return {
     cyclones_WP_list: cyclonesWithClusters,
     track0_info_list,
     tracks_list,
     tracks_list_enhanced,
     unassignedTracks: publicUnassigned,
-    clusterStats: { clusters: tracks_list.length, noise: publicUnassigned.length,
+    clusterStats: { clusters: clusters.length, noise: publicUnassigned.length,
       initialClusters, newClusters, unassigned: publicUnassigned.length, rounds, rejectedDuplicates,
       reassigned, swappedMembers }
   };

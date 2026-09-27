@@ -82,6 +82,7 @@ function buildDataset(data, inputName, options) {
   const oldTracks = oldResult.cyclones_WP_list.flatMap(cyclone => cyclone.tracks || []);
   const newById = new Map();
   for (const group of newResult.tracks_list) {
+    if (group.clusters_id === 9999) continue;
     for (const track of group.tracks) newById.set(track.trackId, { cluster: group.clusters_id, reason: null });
   }
   for (const track of newResult.unassignedTracks) {

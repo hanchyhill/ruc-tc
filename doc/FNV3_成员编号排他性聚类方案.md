@@ -7,7 +7,7 @@
 - CSV 的 `sample` 是集合成员编号。`src/resolve.CSV_fnv3.js` 目前用 `Math.round(Number(sample))` 生成轨迹的 `ensembleNumber`；分组前应确认 `sample` 为有效整数，避免不同原始值经四舍五入后误变成同一个编号。
 - 排他性按 `(ins, initTime, ensembleNumber)` 的同一批次和同一风暴簇判断。不同起报时间的同号成员不能混在一次聚类中；不同风暴簇可以各有一个同号成员。
 - 每条轨迹需要独立、稳定的内部 `trackId`，例如输入数组索引或 CSV 的 `track_id + sample + init_time`。不能仅用当前的 `tcID + ensembleNumber` 回填：同号轨迹可能在同一气旋对象中重复，这个键会覆盖先前结果。
-- 单个簇的最终输出必须满足 `tracks.length === new Set(tracks.map(t => t.ensembleNumber)).size`。尚未归属任何簇的路径保留为独立的待定轨迹，不能把所有噪声合成一个 `9999` 风暴对象。
+- 正式风暴簇的最终输出必须满足 `tracks.length === new Set(tracks.map(t => t.ensembleNumber)).size`。未归属路径另汇总到 `C-9999` 风暴对象以兼容入库；该对象是待定路径容器，不受成员编号排他约束。
 
 ## 2. 路径相似性的定义
 
@@ -44,7 +44,7 @@
 2. 若 `C` 中没有 `A` 的成员编号，满足上述条件即可成为候选目标。若有同号成员 `B`，分别相对 `C \ {B}` 计算 `A` 和 `B` 的相似占比及相似路径距离；只有 `A` 的占比更高，或占比相同但距离中位数至少改善 `minScoreMarginKm = 75 km`，才用 `A` 替换 `B`。被换出的 `B` 回待选池，本次跨簇分配不再重新处理它，避免 A/B 反复交换。
 3. 多个目标簇都满足时，优先选择相似占比更高、相似路径距离更低的簇；若前两名占比相同且距离分差不足 75 km，则保持待定。按输入顺序处理待选轨迹，后面的轨迹能看到前面已完成的分配。
 4. 把仍在待选池中的轨迹（包括旧噪声和换出的成员）一起运行一次与旧版相同的首点 `sdbscan(pointList, epsilon, minPoints)`。对新候选簇再次消除同号冲突。新簇最终少于 `minNewClusterMembers = 5` 条不同成员轨迹，就不输出独立风暴簇，全部留在 `unassignedTracks`。
-5. `unassignedTracks` 保留每条轨迹及原因，当前可见 `duplicate_member`、`small_new_cluster`、`insufficient_support`、`insufficient_overlap`、`no_matching_cluster`、`invalid_track`、`invalid_member`。这比把所有噪声打包成一个 `9999` 风暴对象更适合人工核对。
+5. `unassignedTracks` 保留每条轨迹及原因，当前可见 `duplicate_member`、`small_new_cluster`、`insufficient_support`、`insufficient_overlap`、`no_matching_cluster`、`invalid_track`、`invalid_member`。同一数据源、同一起报时间的待定路径还汇总为一个 `C-9999` 风暴对象，沿用原有入库流程；具体原因仍可在 `unassignedTracks` 中核对。
 
 伪代码：
 
@@ -62,8 +62,8 @@ return clusters + newClusters, unassignedTracks = 剩余 pool
 
 ## 5. 验收要点
 
-- 任意输出簇内没有重复 `ensembleNumber`；同号轨迹可分别属于不同风暴簇。
-- 所有输入轨迹恰好出现在一个输出簇或 `unassignedTracks` 中，不丢失、不重复。
+- 任意正式风暴簇内没有重复 `ensembleNumber`；同号轨迹可分别属于不同风暴簇。`C-9999` 是未归属容器，允许同号轨迹。
+- 所有输入轨迹恰好出现在一个正式输出簇或 `unassignedTracks` 中，不丢失、不重复；`C-9999` 是 `unassignedTracks` 的入库副本。
 - 对同号候选 A、B，若 A 与其他成员在共同有效时间上的路径明显更接近，则保留 A；B 后续仍可进入另一个合适的簇。
 - 同号候选路径没有足够重叠、多个候选难以区分、或待选池人数不足时，不强行决定冲突或生成新簇，并说明原因；无同号冲突的首轮旧簇保持完整。
 - 对跨 180° 经线、不同轨迹起始时效、短轨迹与空轨迹分别检查相似性与待定输出。
@@ -97,4 +97,4 @@ node src/build_fnv3_cluster_visualization.js [基础解析 JSON 或 cyclogenesis
 
 当前实现会检查输出轨迹总数、唯一归属和簇内成员编号唯一性。由于旧 CSV 解析器已将 `sample` 四舍五入，新函数只能验证解析后的 `ensembleNumber` 是非负整数；若将来要拒绝原始 CSV 中非整数的 `sample`，需在解析阶段另行调整。
 
-默认入口保持旧调用签名和增强风暴对象结构，继续提供 `clusterStats.noise` 与首点、源轨迹的 `clusters_id`；未归属路径在这些元数据中标为 `9999`，同时作为独立的 `unassignedTracks` 返回，不会被组合成一个增强风暴对象写库。对比脚本始终直接读取 `cluster_legacy.js`，不受回退环境变量影响。
+默认入口保持旧调用签名和增强风暴对象结构，继续提供 `clusterStats.noise` 与首点、源轨迹的 `clusters_id`；未归属路径在这些元数据中标为 `9999`，同时作为独立的 `unassignedTracks` 返回，并按数据源和起报时间组合成 `C-9999` 增强风暴对象写库。`clusterStats.clusters` 仅统计正式簇。对比脚本始终直接读取 `cluster_legacy.js`，不受回退环境变量影响。

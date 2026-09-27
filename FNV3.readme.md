@@ -57,6 +57,13 @@ yarn install
 
 脚本还会通过 `node-schedule` 每 20 分钟轮询一次。
 
+下载器遇到已存在的 cyclogenesis CSV 会跳过该时次。如果要用更新后的聚类算法补录某个已下载时次，可运行一次本地 CSV 补录命令；它只重算并写入聚类风暴对象（含 `C-9999`），不会重新下载文件：
+
+```powershell
+node src/reprocess_fnv3_cluster.js "<OPER cyclogenesis.csv 的完整路径>" fnv3-gen
+node src/reprocess_fnv3_cluster.js "<WNV3 cyclogenesis.csv 的完整路径>" WNV3
+```
+
 ---
 
 ## 4. 下载文件与存储路径
@@ -194,7 +201,7 @@ yarn install
 - 每条成员轨迹被赋予 `clusters_id`
 - 新版未归属路径在首点和源轨迹元数据中记为 `9999`，并单独返回 `unassignedTracks`
 - 按 `clusters_id` 回填并重组轨迹
-- 输出增强结构 `tracks_list_enhanced`，包含通过成员排他筛选的风暴簇；未归属路径不打包为风暴对象
+- 输出增强结构 `tracks_list_enhanced`，包含通过成员排他筛选的风暴簇，以及按数据源和起报时间汇总的 `C-9999` 待定路径风暴对象；后者沿用现有流程写库
 
 ---
 

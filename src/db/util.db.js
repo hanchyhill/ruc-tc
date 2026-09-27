@@ -11,6 +11,16 @@ async function save2DB(fcData={tcID:''}){
                              .exec();
   
   if(findTC){//判断填充功能
+    if(fcData.fillStatus == null && Array.isArray(fcData.tracks) &&
+       /^C-\d+$/.test(fcData.cycloneNumber || '') &&
+       (fcData.ins === 'fnv3-gen' || fcData.ins === 'WNV3')){
+      // Generated FNV3 clusters have no fillStatus. Replacing their tracks
+      // also handles reruns where the member count stays equal or shrinks.
+      findTC.tracks = fcData.tracks;
+      await findTC.save();
+      console.log('更新'+findTC.tcID);
+      return;
+    }
     if(findTC.tracks && fcData.tracks && fcData.tracks.length>findTC.tracks.length){// 更新集合预报
       findTC.tracks = fcData.tracks;
       findTC.controlIndex = fcData.controlIndex;

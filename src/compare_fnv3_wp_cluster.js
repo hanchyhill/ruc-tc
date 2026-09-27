@@ -40,11 +40,12 @@ function summarizeOld(result) {
 }
 
 function summarizeNew(result) {
-  const duplicateGroups = result.tracks_list.filter(group =>
+  const groups = result.tracks_list.filter(group => group.clusters_id !== 9999);
+  const duplicateGroups = groups.filter(group =>
     new Set(group.tracks.map(track => track.ensembleNumber)).size !== group.tracks.length);
   return {
-    clusters: result.tracks_list.length,
-    assignedTracks: result.tracks_list.reduce((sum, group) => sum + group.tracks.length, 0),
+    clusters: groups.length,
+    assignedTracks: groups.reduce((sum, group) => sum + group.tracks.length, 0),
     unassignedTracks: result.unassignedTracks.length,
     clustersWithRepeatedMembers: duplicateGroups.length,
     rounds: result.clusterStats.rounds,
@@ -66,8 +67,7 @@ function compare(filePath, outputDir, options = {}) {
   const newResult = processWPCycloneClusterMemberExclusive(data, options);
   const summary = {
     input: path.resolve(filePath),
-    inputTracks: newResult.tracks_list.reduce((sum, group) => sum + group.tracks.length, 0) +
-      newResult.unassignedTracks.length,
+    inputTracks: newResult.tracks_list.reduce((sum, group) => sum + group.tracks.length, 0),
     memberExclusiveOptions: { ...DEFAULT_CLUSTER_OPTIONS, ...options },
     old: summarizeOld(oldResult),
     memberExclusive: summarizeNew(newResult)

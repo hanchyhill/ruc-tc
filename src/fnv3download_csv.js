@@ -171,7 +171,7 @@ async function downloadData(date, source = SOURCE_OPER){
         }
         const clusterData = clusterResult.tracks_list_enhanced.data;
         for(let cluster of clusterData){
-            save2DB(cluster).catch(err=>{throw err});
+            await save2DB(cluster);
         }
         return clusterData;
     } catch (error) {
