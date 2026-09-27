@@ -13,7 +13,9 @@
 
 - 下载与调度入口：`src/fnv3download_csv.js`
 - CSV 解析核心：`src/resolve.CSV_fnv3.js`
-- 聚类算法核心：`src/lib/cluster.js`
+- 聚类入口：`src/lib/cluster.js`（默认成员编号排他算法）
+- 旧版算法与回退：`src/lib/cluster_legacy.js`；设置 `FNV3_CLUSTER_ALGORITHM=legacy` 并重启进程
+- 新版算法：`src/lib/cluster_member_exclusive.js`
 - 本地文件聚类示例脚本：`src/process_fnv3_wp.js`
 - PM2 配置：`pm2csv_fnv3.json`
 
@@ -159,6 +161,8 @@ yarn install
 
 函数：`processWPCycloneCluster(cycloneDataList, options)`
 
+默认入口调用成员编号排他算法，保留原函数签名与增强结果结构；旧版首点 DBSCAN 细节见 `doc/FNV3_自动聚类算法原理.md`，新版步骤见 `doc/FNV3_成员编号排他性聚类方案.md`。以下 6.1–6.3 描述两版共有的首轮候选聚类。
+
 ### 6.1 聚类输入筛选
 
 仅保留：
@@ -188,9 +192,9 @@ yarn install
 ### 6.4 聚类结果
 
 - 每条成员轨迹被赋予 `clusters_id`
-- 噪声点记为 `9999`
+- 新版未归属路径在首点和源轨迹元数据中记为 `9999`，并单独返回 `unassignedTracks`
 - 按 `clusters_id` 回填并重组轨迹
-- 输出增强结构 `tracks_list_enhanced`，包含聚类后的“类风暴”对象
+- 输出增强结构 `tracks_list_enhanced`，包含通过成员排他筛选的风暴簇；未归属路径不打包为风暴对象
 
 ---
 

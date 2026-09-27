@@ -1,28 +1,8 @@
 const fs = require('fs');
 const path = require('path');
 const { processWPCycloneCluster } = require('./lib/cluster');
-/**
-1. filter "basinShort2"为"WP"的数据，记为cyclones_WP_list
-2. 从"tracks"中，提取每个"track"的第一个元素的元素，并附带上"ensembleNumber"，"tcID"，重组为一个新的数组，track0_info_list
-
-接下来，需要给track0_info_list中的各个点位进行聚类分析，使用DSCAN方法进行聚类，使用到的第三方库是sdbscan, 仓库地址是https://www.npmjs.com/package/sdbscan。
-
-数据处理规则如下
-
-把"step", "lon", "lat" 转为三维点数组，其中"step"转换为等效经纬度，计算方法如下
-step_axis = step*20/110
-这样就构成三维点坐标
-point = [lon ,lat, step_axis]
-把这些点构成点集合 point_list
-进行聚类分析let res = sdbscan(point_list,10,20);
-
-根据分组信息，在track0_info_list中添加分组属性，记为clusters_id, 如果此点属于noise，则clusters_id记为9999
-
-继续完成任务，在得到track0_info_list的clusters_id之后，匹配回原来的cyclones_WP_list的每个tracks当中，并且按照clusters_id重新聚合拥有相同clusters_id的track，构成新的tracks_list数组，并输出tracks_list。
-
-==============
-继续完成任务，
- */
+// Local CSV clustering example. The shared entry point uses member-exclusive
+// clustering by default; FNV3_CLUSTER_ALGORITHM=legacy selects the old version.
 
 function processFNV3WPData() {
   // Read the basic result JSON file
@@ -47,6 +27,7 @@ function processFNV3WPData() {
     track0_info_list, 
     tracks_list, 
     tracks_list_enhanced,
+    unassignedTracks,
     clusterStats 
   } = result;
 
@@ -54,7 +35,7 @@ function processFNV3WPData() {
   console.log(`Extracted track0 info records: ${track0_info_list.length}`);
   
   if (track0_info_list.length > 0) {
-    console.log(`DBSCAN clustering complete -> clusters: ${clusterStats.clusters}, noise points: ${clusterStats.noise}`);
+    console.log(`DBSCAN clustering complete -> clusters: ${clusterStats.clusters}, unassigned tracks: ${clusterStats.noise}`);
   }
   
   if (tracks_list.length > 0) {
@@ -66,6 +47,7 @@ function processFNV3WPData() {
   const outputTrack0Path = path.resolve(__dirname, '../demo/track0_info_list.json');
   const outputTracksListPath = path.resolve(__dirname, '../demo/tracks_list.json');
   const outputTracksListEnhancedPath = path.resolve(__dirname, '../demo/tracks_list_cluster_enhanced.json');
+  const outputUnassignedPath = path.resolve(__dirname, '../demo/unassigned_tracks.json');
 
   try {
     fs.writeFileSync(outputWPPath, JSON.stringify(cyclones_WP_list, null, 2), 'utf8');
@@ -81,6 +63,10 @@ function processFNV3WPData() {
     if (tracks_list_enhanced.data.length > 0) {
       fs.writeFileSync(outputTracksListEnhancedPath, JSON.stringify(tracks_list_enhanced, null, 2), 'utf8');
       console.log(`Tracks list enhanced saved to: ${outputTracksListEnhancedPath}`);
+    }
+    if (Array.isArray(unassignedTracks)) {
+      fs.writeFileSync(outputUnassignedPath, JSON.stringify(unassignedTracks, null, 2), 'utf8');
+      console.log(`Unassigned tracks saved to: ${outputUnassignedPath}`);
     }
   } catch (error) {
     console.error('Error saving output files:', error.message);
@@ -111,7 +97,8 @@ function processFNV3WPData() {
   return {
     cyclones_WP_list,
     track0_info_list,
-    tracks_list
+    tracks_list,
+    unassignedTracks
   };
 }
 

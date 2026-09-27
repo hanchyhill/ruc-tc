@@ -166,6 +166,9 @@ async function downloadData(date, source = SOURCE_OPER){
         }
         const basicResult = processFNV3CSVData(filePath, source.ins);
         const clusterResult = processWPCycloneCluster(basicResult.data, { ins: source.ins });
+        if (Array.isArray(clusterResult.unassignedTracks)) {
+            console.log(`${source.model} 聚类完成: ${clusterResult.clusterStats.clusters} 个簇，${clusterResult.unassignedTracks.length} 条轨迹待定`);
+        }
         const clusterData = clusterResult.tracks_list_enhanced.data;
         for(let cluster of clusterData){
             save2DB(cluster).catch(err=>{throw err});

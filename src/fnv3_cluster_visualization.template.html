@@ -1,0 +1,443 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>FNV3 聚类对比 · 成员排他性</title>
+  <style>
+    :root { --ink:#172b3a; --muted:#627585; --line:#dbe5eb; --paper:#fff; --bg:#f2f6f8;
+      --teal:#087e83; --amber:#bb6c23; --danger:#bd5057; --shadow:0 10px 32px rgba(23,43,58,.07); }
+    * { box-sizing:border-box; }
+    body { margin:0; background:var(--bg); color:var(--ink); font:14px/1.5 "Segoe UI","Microsoft YaHei",Arial,sans-serif; }
+    button,select,input { font:inherit; }
+    button { cursor:pointer; }
+    .wrap { max-width:1520px; margin:auto; padding:28px 28px 70px; }
+    .hero { display:flex; justify-content:space-between; gap:24px; align-items:end; padding:12px 0 28px; border-bottom:1px solid var(--line); }
+    .eyebrow { color:var(--teal); font-size:11px; font-weight:800; letter-spacing:.14em; text-transform:uppercase; }
+    h1 { font-size:clamp(26px,3vw,38px); line-height:1.2; margin:8px 0 8px; letter-spacing:-.035em; }
+    h2 { font-size:20px; line-height:1.25; margin:0; letter-spacing:-.02em; }
+    h3 { font-size:15px; margin:0 0 10px; }
+    p { margin:0; }
+    .sub { color:var(--muted); max-width:740px; }
+    .meta { text-align:right; color:var(--muted); font-size:12px; white-space:nowrap; }
+    .meta strong { color:var(--ink); }
+    .section { margin-top:25px; }
+    .section-head { display:flex; justify-content:space-between; align-items:baseline; gap:16px; margin-bottom:12px; }
+    .section-head p { color:var(--muted); font-size:12px; }
+    .kpis { display:grid; grid-template-columns:repeat(4,1fr); gap:13px; }
+    .card { background:var(--paper); border:1px solid var(--line); border-radius:14px; box-shadow:var(--shadow); }
+    .kpi { padding:18px 20px; min-height:117px; border-top:3px solid var(--teal); }
+    .kpi.warn { border-top-color:var(--amber); }
+    .kpi.danger { border-top-color:var(--danger); }
+    .kpi .label { color:var(--muted); font-size:12px; }
+    .kpi .value { font-size:30px; line-height:1.2; font-weight:750; margin:7px 0 4px; font-variant-numeric:tabular-nums; }
+    .kpi .hint { color:var(--muted); font-size:11px; }
+    .assessment { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:13px; }
+    .assessment > div { padding:15px 18px; border-radius:12px; border:1px solid #b9deda; background:#edf8f6; }
+    .assessment > div.review { border-color:#edd7b5; background:#fff8ed; }
+    .assessment strong { display:block; font-size:13px; margin-bottom:3px; }
+    .assessment p { color:#49616b; font-size:12px; }
+    .controls { display:flex; gap:13px; flex-wrap:wrap; align-items:end; padding:16px; }
+    .controls label { color:var(--muted); font-size:11px; font-weight:700; display:grid; gap:5px; }
+    .controls select { min-width:145px; padding:8px 30px 8px 10px; border:1px solid var(--line); border-radius:8px; color:var(--ink); background:#fff; }
+    .check { display:flex !important; flex-direction:row; align-items:center; gap:7px !important; padding:9px 0; color:var(--ink) !important; }
+    .check input { accent-color:var(--teal); }
+    .button { border:1px solid var(--line); background:#fff; color:var(--ink); border-radius:8px; padding:8px 12px; }
+    .button:hover { border-color:var(--teal); color:var(--teal); }
+    .map-grid { display:grid; grid-template-columns:1fr 1fr; gap:13px; }
+    .map-card { overflow:hidden; }
+    .map-top { padding:16px 18px 10px; display:flex; justify-content:space-between; gap:10px; align-items:baseline; }
+    .map-top p { color:var(--muted); font-size:11px; }
+    canvas { display:block; width:100%; height:430px; touch-action:none; cursor:crosshair; }
+    .legend { display:flex; flex-wrap:wrap; gap:7px 13px; min-height:46px; padding:10px 17px 14px; border-top:1px solid var(--line); }
+    .legend button { display:flex; gap:6px; align-items:center; color:var(--muted); font-size:11px; border:1px solid transparent; border-radius:6px; background:transparent; padding:3px 5px; }
+    .legend button:hover { border-color:var(--teal); color:var(--ink); }
+    .legend button.active { border-color:var(--teal); background:#e6f4f2; color:var(--ink); font-weight:700; }
+    .legend button.dim { opacity:.5; }
+    .focus-panel { display:flex; align-items:center; gap:14px; flex-wrap:wrap; padding:12px 16px; border-left:4px solid var(--teal); }
+    .focus-panel strong { white-space:nowrap; }
+    .focus-panel .flow { display:flex; gap:7px; align-items:center; flex-wrap:wrap; }
+    .focus-panel .flow button { display:inline-flex; align-items:center; gap:6px; border:1px solid var(--line); border-radius:7px; padding:5px 8px; background:#fff; color:var(--ink); font-size:12px; }
+    .focus-panel .flow button:hover { border-color:var(--teal); }
+    .swatch { width:9px; height:9px; border-radius:50%; flex:none; }
+    .panel-grid { display:grid; grid-template-columns:minmax(0,1.4fr) minmax(290px,.6fr); gap:13px; }
+    .panel-pad { padding:18px; }
+    .muted { color:var(--muted); }
+    .small { font-size:12px; }
+    .scroll { overflow:auto; max-width:100%; }
+    table { border-collapse:collapse; width:100%; font-size:12px; }
+    th,td { padding:8px 9px; border-bottom:1px solid var(--line); text-align:left; white-space:nowrap; }
+    th { color:var(--muted); font-size:11px; font-weight:700; background:#f9fbfc; }
+    td.num,th.num { text-align:right; font-variant-numeric:tabular-nums; }
+    .matrix th:first-child { position:sticky; left:0; z-index:1; background:#f9fbfc; }
+    .matrix td:first-child { position:sticky; left:0; background:#fff; font-weight:700; }
+    .matrix button { display:block; min-width:42px; width:100%; border:0; border-radius:6px; padding:7px 5px; color:#07565a; background:#d8efed; font-weight:700; }
+    .matrix button:hover { outline:2px solid var(--teal); }
+    .matrix button.empty { color:#b2bfc5; background:transparent; cursor:default; font-weight:400; }
+    .matrix .axis { border:0; background:none; color:var(--teal); padding:0; font-weight:700; }
+    .matrix .axis.active { background:#dcefeb; border-radius:4px; padding:3px 5px; }
+    .matrix button.cell-active { outline:2px solid #0c777c; }
+    .cluster-link { border:0; background:none; color:var(--teal); font-weight:700; padding:0; text-decoration:underline; text-underline-offset:2px; }
+    .cluster-link:hover { color:#07545b; }
+    .detail { min-height:230px; }
+    .detail .row { display:flex; justify-content:space-between; gap:10px; padding:6px 0; border-bottom:1px solid var(--line); font-size:12px; }
+    .detail .row span:first-child { color:var(--muted); }
+    .pill { display:inline-block; padding:2px 7px; border-radius:6px; background:#e7f4f2; color:#087177; font-weight:700; }
+    .pill.pending { background:#fff0e4; color:#a95c17; }
+    .siblings { display:flex; flex-wrap:wrap; gap:6px; margin-top:9px; }
+    .siblings button { font-size:11px; border:1px solid var(--line); background:#fff; border-radius:6px; padding:3px 7px; }
+    .siblings button:hover { border-color:var(--teal); }
+    .track-table tbody tr { cursor:pointer; }
+    .track-table tbody tr:hover { background:#eef8f7; }
+    .track-table tbody tr.selected { background:#dcefeb; }
+    .table-note { display:flex; justify-content:space-between; color:var(--muted); font-size:11px; margin-top:10px; }
+    .foot { margin-top:24px; color:var(--muted); font-size:11px; border-top:1px solid var(--line); padding-top:14px; }
+    @media (max-width:1000px) { .kpis { grid-template-columns:repeat(2,1fr); } .panel-grid { grid-template-columns:1fr; } }
+    @media (max-width:760px) { .wrap { padding:16px 13px 42px; } .hero { display:block; } .meta { text-align:left; margin-top:12px; }
+      .map-grid,.assessment { grid-template-columns:1fr; } canvas { height:340px; } .kpis { gap:8px; } .kpi { padding:14px; } .kpi .value { font-size:25px; } }
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <header class="hero">
+    <div><div class="eyebrow">FNV3 · clustering review</div><h1>热带气旋聚类：旧版与成员排他版</h1>
+      <p class="sub">点击左图的旧簇编号，右图按新版去向着色；点击右图的新簇编号，左图按旧版来源着色。两图保持相同地图范围和轨迹位置。</p></div>
+    <div class="meta"><div>数据 <strong id="source"></strong></div><div>生成时间 <strong id="generated"></strong></div><div>地图：经纬度网格 · 可滚轮缩放 / 拖动</div></div>
+  </header>
+
+  <section class="section">
+    <div class="section-head"><h2>对比概览</h2><p>旧版噪声组不计入风暴簇</p></div>
+    <div class="kpis" id="kpis"></div>
+    <div class="assessment">
+      <div><strong>成员编号排他性与原簇保留</strong><p id="constraint"></p></div>
+      <div class="review"><strong>风暴归属：仍需人工核查</strong><p id="review"></p></div>
+    </div>
+  </section>
+
+  <section class="section card controls" aria-label="筛选轨迹">
+    <label>成员编号<select id="memberFilter"></select></label>
+    <label>旧版簇<select id="oldFilter"></select></label>
+    <label>新版簇<select id="newFilter"></select></label>
+    <label class="check"><input type="checkbox" id="duplicateFilter">仅看旧簇中同号轨迹</label>
+    <button class="button" id="resetFilters">清除筛选</button>
+    <button class="button" id="resetView">重置地图范围</button>
+  </section>
+  <section class="section card focus-panel" id="focusPanel" aria-live="polite"></section>
+
+  <section class="section">
+    <div class="section-head"><h2>轨迹空间分布</h2><p>起点为空心圆，选中轨迹用深色描边；两图始终使用同一地图范围</p></div>
+    <div class="map-grid">
+      <div class="card map-card"><div class="map-top"><h3>旧版 · 首点 DBSCAN</h3><p id="oldShown"></p></div><canvas id="oldMap" aria-label="旧版聚类轨迹图"></canvas><div class="legend" id="oldLegend"></div></div>
+      <div class="card map-card"><div class="map-top"><h3>新版 · 成员排他 + 路径复核</h3><p id="newShown"></p></div><canvas id="newMap" aria-label="新版聚类轨迹图"></canvas><div class="legend" id="newLegend"></div></div>
+    </div>
+  </section>
+
+  <section class="section panel-grid">
+    <div class="card panel-pad"><div class="section-head"><h2>旧簇 → 新簇流向</h2><p>点击行标题看旧簇去向，列标题看新簇来源</p></div><div class="scroll" id="matrix"></div></div>
+    <div class="card panel-pad"><h2>选中轨迹</h2><div class="detail" id="detail"></div></div>
+  </section>
+
+  <section class="section panel-grid">
+    <div class="card panel-pad"><div class="section-head"><h2>轨迹清单</h2><p>点击任意行可在两图定位</p></div><div class="scroll"><table class="track-table"><thead><tr><th>ID</th><th>成员</th><th>旧版</th><th>新版</th><th>首个时效</th><th>点数</th><th>来源</th></tr></thead><tbody id="trackRows"></tbody></table></div><div class="table-note"><span id="rowCount"></span><span>最多展示前 80 行；可用上方筛选缩小范围</span></div></div>
+    <div class="card panel-pad"><h2>簇内路径分散度</h2><p class="small muted" style="margin:8px 0 12px">每对轨迹在共同有效时间的球面距离取中位数，再对簇内轨迹对取中位数。数值越小通常越集中，但不同簇大小和重叠时段会影响比较。</p><div class="scroll"><table><thead><tr><th>版本 / 簇</th><th class="num">轨迹 / 成员</th><th class="num">中位距离</th><th class="num">可比较对</th></tr></thead><tbody id="cohesionRows"></tbody></table></div></div>
+  </section>
+
+  <footer class="foot">判断说明：成员唯一性是硬约束；图上的地理接近和路径分散度只能辅助判断，还需核对真实风暴标签、生成时效与物理连续性。路径分散度按原始共同时间点计算，和新版筛选所用的插值综合分数不同。此页为静态数据快照，不向网络发送数据。</footer>
+</div>
+<script id="dataset" type="application/json">__FNV3_DATA__</script>
+<script>
+(() => {
+  const data = JSON.parse(document.getElementById('dataset').textContent);
+  const records = data.records;
+  const byId = new Map(records.map(record => [record.id, record]));
+  const palette = ['#007f86','#d46b36','#6f5ca5','#8b9d2c','#3b76b5','#bf5684','#9d7032','#3a9981','#945c5b','#637ead','#bd9a32','#438baf'];
+  const reasonText = { duplicate_member:'同号冲突', insufficient_overlap:'重叠时段不足', insufficient_support:'路径支持不足', no_matching_cluster:'未匹配到簇', invalid_track:'轨迹无效', invalid_member:'成员编号无效' };
+  const $ = id => document.getElementById(id);
+  const safe = value => String(value ?? '').replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
+  const oldIds = data.oldGroups.map(group => group.id);
+  const newIds = data.newGroups.map(group => group.id);
+  const duplicateIds = new Set();
+  for (const record of records) {
+    if (record.oldCluster !== 9999 && records.some(other => other.id !== record.id &&
+      other.oldCluster === record.oldCluster && other.member === record.member)) duplicateIds.add(record.id);
+  }
+  const state = { member:'all', old:'all', next:'all', duplicates:false, selected:null };
+  const points = records.flatMap(record => record.points).filter(point => Number.isFinite(point[1]) && Number.isFinite(point[2]));
+  const lon = point => point[1] < 0 ? point[1] + 360 : point[1];
+  const bounds = { minLon:Math.min(...points.map(lon))-5, maxLon:Math.max(...points.map(lon))+5,
+    minLat:Math.min(...points.map(point=>point[2]))-4, maxLat:Math.max(...points.map(point=>point[2]))+4 };
+  let view = {...bounds};
+  const oldColor = id => id === 9999 ? '#8d9da6' : palette[id % palette.length];
+  const newColor = id => id === null ? '#87939c' : palette[(id + 2) % palette.length];
+  const labelOld = id => id === 9999 ? '噪声 9999' : `旧簇 ${id}`;
+  const labelNew = id => id === null ? '待定' : `新簇 ${id}`;
+  const matches = record => (state.member === 'all' || String(record.member) === state.member) &&
+    (state.old === 'all' || String(record.oldCluster) === state.old) &&
+    (state.next === 'all' || String(record.newCluster) === state.next) &&
+    (!state.duplicates || duplicateIds.has(record.id));
+  const visible = () => records.filter(matches);
+  const isFocused = () => state.old !== 'all' || state.next !== 'all' ||
+    state.member !== 'all' || state.duplicates;
+  function setFocus(side, value, intersection = false) {
+    const stringValue = String(value);
+    if (side === 'old') {
+      const same = state.old === stringValue && state.next === 'all';
+      state.old = same ? 'all' : stringValue;
+      state.next = 'all';
+    } else if (side === 'new') {
+      const same = state.next === stringValue && state.old === 'all';
+      state.next = same ? 'all' : stringValue;
+      state.old = 'all';
+    } else if (intersection) {
+      state.old = String(value.old);
+      state.next = String(value.next);
+    }
+    state.selected = null;
+    $('oldFilter').value = state.old;
+    $('newFilter').value = state.next;
+    render();
+  }
+
+  $('source').textContent = data.inputName;
+  $('generated').textContent = new Date(data.generatedAt).toLocaleString('zh-CN', { hour12:false });
+  const summary = data.summary;
+  $('kpis').innerHTML = [
+    ['输入轨迹',summary.inputTracks,'WP 扰动成员轨迹',''],
+    ['簇数量',`${summary.oldClusters} → ${summary.newClusters}`,'旧版 → 新版','warn'],
+    ['簇内重复成员',`${summary.oldExtraDuplicates} → ${summary.newExtraDuplicates}`,'旧版 → 新版多余同号轨迹','danger'],
+    ['未归属轨迹',`${summary.oldNoise} → ${summary.newUnassigned}`,'旧版噪声 → 新版待定','warn']
+  ].map(([label,value,hint,tone]) => `<div class="card kpi ${tone}"><div class="label">${label}</div><div class="value">${value}</div><div class="hint">${hint}</div></div>`).join('');
+  $('constraint').textContent = `新版 ${summary.newClusters} 个簇均无重复成员编号；原来没有同号冲突的 ${summary.noConflictOldClusters} 个旧簇中，${summary.preservedNoConflictClusters} 个完整保留。${summary.newAssigned} 条入簇，${summary.newUnassigned} 条待定。`;
+  const oldSpread=Math.max(0,...data.oldGroups.filter(group=>group.id!==9999&&group.medianPairKm!==null).map(group=>group.medianPairKm));
+  const newSpread=Math.max(0,...data.newGroups.filter(group=>group.medianPairKm!==null).map(group=>group.medianPairKm));
+  $('review').textContent = `跨簇重新纳入 ${summary.reassignedToExisting} 条（同号替换 ${summary.sameMemberSwaps} 次），待选池形成 ${summary.newClustersFromPool} 个新簇；${summary.newUnassigned} 条仍待定。最大簇内中位路径距离约 ${Math.round(oldSpread)} → ${Math.round(newSpread)} km，风暴归属仍需人工核查。`;
+
+  function fillSelect(id, values, label, formatter) {
+    $(id).innerHTML = `<option value="all">全部${label}</option>` + values.map(value =>
+      `<option value="${value}">${safe(formatter(value))}</option>`).join('');
+  }
+  fillSelect('memberFilter',[...new Set(records.map(record=>record.member))].sort((a,b)=>a-b),'成员',value=>`成员 ${value}`);
+  fillSelect('oldFilter',oldIds,'旧簇',labelOld);
+  fillSelect('newFilter',[...newIds,null],'新簇',labelNew);
+  const axisLon = value => value <= 180 ? `${Math.round(value)}°E` : `${Math.round(360-value)}°W`;
+
+  function canvasSize(canvas) {
+    const ratio = window.devicePixelRatio || 1;
+    const width = canvas.clientWidth, height = canvas.clientHeight;
+    if (canvas.width !== Math.round(width*ratio) || canvas.height !== Math.round(height*ratio)) {
+      canvas.width = Math.round(width*ratio); canvas.height = Math.round(height*ratio);
+    }
+    const context = canvas.getContext('2d');
+    context.setTransform(ratio,0,0,ratio,0,0);
+    return {context,width,height};
+  }
+  function project(point,width,height) {
+    const usableWidth=width-75, usableHeight=height-58;
+    return [52+(lon(point)-view.minLon)/(view.maxLon-view.minLon)*usableWidth,
+      17+(view.maxLat-point[2])/(view.maxLat-view.minLat)*usableHeight];
+  }
+  function drawGrid(ctx,width,height) {
+    ctx.fillStyle='#fcfefe'; ctx.fillRect(0,0,width,height);
+    ctx.strokeStyle='#e5edf0'; ctx.lineWidth=1;
+    ctx.fillStyle='#8798a3'; ctx.font='11px Segoe UI, Arial';
+    for(let degree=Math.ceil(view.minLon/10)*10;degree<view.maxLon;degree+=10) {
+      const x=project([0,degree,0],width,height)[0];
+      ctx.beginPath();ctx.moveTo(x,17);ctx.lineTo(x,height-40);ctx.stroke();
+      ctx.textAlign='center';ctx.fillText(axisLon(degree),x,height-19);
+    }
+    for(let degree=Math.ceil(view.minLat/10)*10;degree<view.maxLat;degree+=10) {
+      const y=project([0,0,degree],width,height)[1];
+      ctx.beginPath();ctx.moveTo(52,y);ctx.lineTo(width-23,y);ctx.stroke();
+      ctx.textAlign='right';ctx.fillText(`${degree}°N`,46,y+4);
+    }
+    ctx.strokeStyle='#b9cbd2'; ctx.strokeRect(52,17,width-75,height-58);
+  }
+  function strokeTrack(ctx,record,mode,width,height,selected,faded=false,focused=false) {
+    if (!record.points.length) return;
+    ctx.beginPath();
+    record.points.forEach((point,index)=>{const [x,y]=project(point,width,height);if(index)ctx.lineTo(x,y);else ctx.moveTo(x,y);});
+    if(selected) {ctx.strokeStyle='#102d3b';ctx.lineWidth=5.5;ctx.globalAlpha=.95;ctx.stroke();}
+    ctx.strokeStyle=faded?'#a7b6bd':mode==='old'?oldColor(record.oldCluster):newColor(record.newCluster);
+    ctx.lineWidth=selected?3.5:focused?2.15:1.35;
+    ctx.globalAlpha=selected ? 1 : faded ? .11 : focused ? .84 : .37;ctx.stroke();
+    if(selected) {
+      const [sx,sy]=project(record.points[0],width,height);
+      const [ex,ey]=project(record.points[record.points.length-1],width,height);
+      ctx.globalAlpha=1;ctx.beginPath();ctx.arc(sx,sy,5,0,Math.PI*2);ctx.fillStyle='#fff';ctx.fill();ctx.strokeStyle='#102d3b';ctx.lineWidth=2;ctx.stroke();
+      ctx.beginPath();ctx.arc(ex,ey,4,0,Math.PI*2);ctx.fillStyle='#102d3b';ctx.fill();
+    }
+    ctx.globalAlpha=1;
+  }
+  function drawMap(mode) {
+    const canvas=$(mode==='old'?'oldMap':'newMap');
+    const {context:ctx,width,height}=canvasSize(canvas);
+    drawGrid(ctx,width,height);
+    const shown=visible();
+    if(isFocused()) for(const record of records) if(!matches(record)) strokeTrack(ctx,record,mode,width,height,false,true);
+    for(const record of shown) if(record.id!==state.selected) strokeTrack(ctx,record,mode,width,height,false,false,isFocused());
+    if(state.selected!==null && byId.has(state.selected) && matches(byId.get(state.selected)))
+      strokeTrack(ctx,byId.get(state.selected),mode,width,height,true);
+    $(mode==='old'?'oldShown':'newShown').textContent=`突出 ${shown.length} / ${records.length} 条轨迹`;
+  }
+  function drawLegends() {
+    const shown=visible();
+    $('oldLegend').innerHTML=data.oldGroups.map(group=>{
+      const count=shown.filter(record=>record.oldCluster===group.id).length;
+      return `<button type="button" data-old="${group.id}" class="${state.old===String(group.id)?'active':''} ${isFocused()&&!count?'dim':''}" title="点击查看 ${safe(labelOld(group.id))} 在新版的去向"><i class="swatch" style="background:${oldColor(group.id)}"></i>${safe(labelOld(group.id))} · ${isFocused()?count+'/'+group.count:group.count}</button>`;
+    }).join('');
+    $('newLegend').innerHTML=[...data.newGroups,{id:null,count:summary.newUnassigned}].map(group=>{
+      const count=shown.filter(record=>record.newCluster===group.id).length;
+      return `<button type="button" data-new="${group.id}" class="${state.next===String(group.id)?'active':''} ${isFocused()&&!count?'dim':''}" title="点击查看 ${safe(labelNew(group.id))} 在旧版的来源"><i class="swatch" style="background:${newColor(group.id)}"></i>${safe(labelNew(group.id))} · ${isFocused()?count+'/'+group.count:group.count}</button>`;
+    }).join('');
+    $('oldLegend').querySelectorAll('[data-old]').forEach(button=>button.addEventListener('click',()=>setFocus('old',button.dataset.old)));
+    $('newLegend').querySelectorAll('[data-new]').forEach(button=>button.addEventListener('click',()=>setFocus('new',button.dataset.new)));
+  }
+  function drawFocusPanel() {
+    const shown=visible();
+    let title='点击任一簇编号';
+    let description='左侧簇 → 右侧去向；右侧簇 → 左侧来源。其他轨迹淡化，选中轨迹按所属簇着色。';
+    let chips='';
+    if(state.old!=='all' && state.next==='all') {
+      title=`${labelOld(Number(state.old))} · ${shown.length} 条`;
+      description='这些轨迹在新版分别进入：';
+      chips=[...newIds,null].map(id=>({id,count:shown.filter(record=>record.newCluster===id).length}))
+        .filter(item=>item.count).map(item=>`<button type="button" data-new="${item.id}"><i class="swatch" style="background:${newColor(item.id)}"></i>${safe(labelNew(item.id))} ${item.count}</button>`).join('');
+      if(state.duplicates && !shown.length &&
+          !records.some(record=>String(record.oldCluster)===state.old && duplicateIds.has(record.id))) {
+        title=`${labelOld(Number(state.old))} · 无同号冲突`;
+        description='该旧簇的成员编号均唯一，新算法完整保留该簇。取消“仅看旧簇中同号轨迹”可查看全部轨迹。';
+      }
+    } else if(state.next!=='all' && state.old==='all') {
+      title=`${labelNew(state.next==='null'?null:Number(state.next))} · ${shown.length} 条`;
+      description='这些轨迹在旧版分别来自：';
+      chips=oldIds.map(id=>({id,count:shown.filter(record=>record.oldCluster===id).length}))
+        .filter(item=>item.count).map(item=>`<button type="button" data-old="${item.id}"><i class="swatch" style="background:${oldColor(item.id)}"></i>${safe(labelOld(item.id))} ${item.count}</button>`).join('');
+    } else if(state.old!=='all' && state.next!=='all') {
+      title=`${labelOld(Number(state.old))} → ${labelNew(state.next==='null'?null:Number(state.next))}`;
+      description=`两版交集 ${shown.length} 条。点击图例中的簇编号可改看整个簇。`;
+    } else if(state.member!=='all' || state.duplicates) {
+      title=`当前筛选 · ${shown.length} 条`;
+      description='点击簇编号可在筛选范围内查看旧版来源或新版去向。';
+    }
+    $('focusPanel').innerHTML=`<strong>${safe(title)}</strong><span class="small muted">${safe(description)}</span><div class="flow">${chips}</div>`;
+    $('focusPanel').querySelectorAll('[data-old]').forEach(button=>button.addEventListener('click',()=>setFocus('old',button.dataset.old)));
+    $('focusPanel').querySelectorAll('[data-new]').forEach(button=>button.addEventListener('click',()=>setFocus('new',button.dataset.new)));
+  }
+  function drawMatrix() {
+    const columns=[...newIds,null];
+    let html='<table class="matrix"><thead><tr><th>旧版 ↓ / 新版 →</th>';
+    html+=columns.map(value=>`<th><button class="axis ${state.next===String(value)?'active':''}" data-new="${value}">${safe(labelNew(value))}</button></th>`).join('')+'</tr></thead><tbody>';
+    for(const old of oldIds) {
+      html+=`<tr><td><button class="axis ${state.old===String(old)?'active':''}" data-old="${old}">${safe(labelOld(old))}</button></td>`;
+      for(const next of columns) {
+        const count=records.filter(record=>record.oldCluster===old&&record.newCluster===next).length;
+        const opacity=.13+.72*count/Math.max(1,summary.inputTracks/3);
+        html+=`<td><button ${count?'':'disabled'} class="${count?'':'empty'} ${state.old===String(old)&&state.next===String(next)?'cell-active':''}" style="${count?`background:rgba(8,126,131,${Math.min(.82,opacity)}) ;color:${opacity>.42?'#fff':'#07565a'}`:''}" data-old="${old}" data-new="${next}">${count||'·'}</button></td>`;
+      }
+      html+='</tr>';
+    }
+    $('matrix').innerHTML=html+'</tbody></table>';
+    $('matrix').querySelectorAll('button:not([disabled])').forEach(button=>button.addEventListener('click',()=>{
+      if(button.dataset.old!==undefined && button.dataset.new!==undefined)
+        setFocus('cell',{old:button.dataset.old,next:button.dataset.new},true);
+      else if(button.dataset.old!==undefined) setFocus('old',button.dataset.old);
+      else setFocus('new',button.dataset.new);
+    }));
+  }
+  function drawDetail() {
+    const record=byId.get(state.selected);
+    if(!record) { $('detail').innerHTML='<p class="muted small" style="margin-top:14px">先点击图例或矩阵中的簇编号查看成员流向，再点击地图轨迹或清单行，在两图追踪同一条路径。</p>';return; }
+    const siblings=records.filter(other=>other.id!==record.id&&other.oldCluster===record.oldCluster&&other.member===record.member);
+    const groupPeers=records.filter(other=>other.newCluster!==null&&other.newCluster===record.newCluster&&other.id!==record.id);
+    const first=record.points[0],last=record.points[record.points.length-1];
+    $('detail').innerHTML=`<div style="margin:12px 0 8px"><span class="pill">轨迹 #${record.id}</span> <span class="pill ${record.newCluster===null?'pending':''}">${safe(labelNew(record.newCluster))}</span></div>`+
+      `<div class="row"><span>成员编号</span><strong>${safe(record.member)}</strong></div>`+
+      `<div class="row"><span>旧版归属</span><strong>${safe(labelOld(record.oldCluster))}</strong></div>`+
+      `<div class="row"><span>新版归属</span><strong>${safe(labelNew(record.newCluster))}${record.reason?` · ${safe(reasonText[record.reason]||record.reason)}`:''}</strong></div>`+
+      `<div class="row"><span>路径时效</span><strong>${first?`${first[0]}–${last[0]} 小时 · ${record.points.length} 点`:'无有效点'}</strong></div>`+
+      `<div class="row"><span>同号旧簇轨迹</span><strong>${siblings.length} 条</strong></div>`+
+      `<div class="row"><span>新版同簇其他成员</span><strong>${record.newCluster===null?'—':groupPeers.length+' 条'}</strong></div>`+
+      `<div class="small muted" style="margin-top:10px;word-break:break-all">来源：${safe(record.tcID)}</div>`+
+      (siblings.length?`<div class="small" style="margin-top:11px"><strong>旧簇中的同号轨迹：</strong><div class="siblings">${siblings.map(other=>`<button data-select="${other.id}">#${other.id} → ${safe(labelNew(other.newCluster))}</button>`).join('')}</div></div>`:'');
+    $('detail').querySelectorAll('[data-select]').forEach(button=>button.addEventListener('click',()=>selectRecord(Number(button.dataset.select))));
+  }
+  function drawRows() {
+    const shown=visible();
+    $('rowCount').textContent=`当前匹配 ${shown.length} 条轨迹`;
+    $('trackRows').innerHTML=shown.slice(0,80).map(record=>`<tr data-id="${record.id}" class="${record.id===state.selected?'selected':''}"><td>#${record.id}</td><td>${safe(record.member)}${duplicateIds.has(record.id)?' ⚠':''}</td><td><button class="cluster-link" data-old="${record.oldCluster}">${safe(labelOld(record.oldCluster))}</button></td><td><button class="cluster-link" data-new="${record.newCluster}">${safe(labelNew(record.newCluster))}</button></td><td>${record.points[0]?record.points[0][0]+' h':'—'}</td><td>${record.points.length}</td><td title="${safe(record.tcID)}">${safe(record.tcID)}</td></tr>`).join('');
+    $('trackRows').querySelectorAll('tr').forEach(row=>row.addEventListener('click',()=>selectRecord(Number(row.dataset.id))));
+    $('trackRows').querySelectorAll('[data-old]').forEach(button=>button.addEventListener('click',event=>{event.stopPropagation();setFocus('old',button.dataset.old);}));
+    $('trackRows').querySelectorAll('[data-new]').forEach(button=>button.addEventListener('click',event=>{event.stopPropagation();setFocus('new',button.dataset.new);}));
+  }
+  function drawCohesion() {
+    const row=(group,mode)=>`<tr><td><button class="cluster-link" data-${mode}="${group.id}">${safe(mode==='old'?labelOld(group.id):labelNew(group.id))}</button></td><td class="num">${group.count} / ${group.distinctMembers}</td><td class="num">${group.medianPairKm===null?'—':Math.round(group.medianPairKm)+' km'}</td><td class="num">${group.comparablePairs} / ${group.totalPairs}</td></tr>`;
+    $('cohesionRows').innerHTML=data.oldGroups.filter(group=>group.id!==9999).map(group=>row(group,'old')).join('')+
+      `<tr><td colspan="4" style="background:#eef5f5;font-weight:700;color:#327074">新版</td></tr>`+
+      data.newGroups.map(group=>row(group,'new')).join('');
+    $('cohesionRows').querySelectorAll('[data-old]').forEach(button=>button.addEventListener('click',()=>setFocus('old',button.dataset.old)));
+    $('cohesionRows').querySelectorAll('[data-new]').forEach(button=>button.addEventListener('click',()=>setFocus('new',button.dataset.new)));
+  }
+  function render() { drawMap('old');drawMap('new');drawLegends();drawMatrix();drawFocusPanel();drawDetail();drawRows(); }
+  function selectRecord(id) { state.selected=id;render(); }
+  $('memberFilter').addEventListener('change',event=>{state.member=event.target.value;state.selected=null;render();});
+  $('oldFilter').addEventListener('change',event=>{state.old=event.target.value;state.next='all';state.selected=null;$('newFilter').value='all';render();});
+  $('newFilter').addEventListener('change',event=>{state.next=event.target.value;state.old='all';state.selected=null;$('oldFilter').value='all';render();});
+  $('duplicateFilter').addEventListener('change',event=>{state.duplicates=event.target.checked;render();});
+  $('resetFilters').addEventListener('click',()=>{
+    state.member=state.old=state.next='all';state.duplicates=false;state.selected=null;
+    $('memberFilter').value=$('oldFilter').value=$('newFilter').value='all';$('duplicateFilter').checked=false;render();
+  });
+  $('resetView').addEventListener('click',()=>{view={...bounds};render();});
+  function segmentDistance(px,py,ax,ay,bx,by) {
+    const dx=bx-ax,dy=by-ay;
+    const t=Math.max(0,Math.min(1,((px-ax)*dx+(py-ay)*dy)/(dx*dx+dy*dy||1)));
+    return Math.hypot(px-ax-t*dx,py-ay-t*dy);
+  }
+  function nearestRecord(x,y,canvas) {
+    let nearest=null,best=11;
+    for(const record of visible()) {
+      const projected=record.points.map(point=>project(point,canvas.clientWidth,canvas.clientHeight));
+      for(let i=0;i<projected.length;i++) {
+        const distance=i?segmentDistance(x,y,...projected[i-1],...projected[i]):Math.hypot(x-projected[i][0],y-projected[i][1]);
+        if(distance<best) {best=distance;nearest=record;}
+      }
+    }
+    return nearest;
+  }
+  for(const canvas of [$('oldMap'),$('newMap')]) {
+    let down=null;
+    canvas.addEventListener('pointerdown',event=>{down={x:event.offsetX,y:event.offsetY,view:{...view},moved:false};canvas.setPointerCapture(event.pointerId);});
+    canvas.addEventListener('pointermove',event=>{
+      if(down) {
+        const dx=event.offsetX-down.x,dy=event.offsetY-down.y;
+        if(Math.abs(dx)+Math.abs(dy)>3) down.moved=true;
+        if(down.moved) {
+          const sx=dx/(canvas.clientWidth-75)*(down.view.maxLon-down.view.minLon);
+          const sy=dy/(canvas.clientHeight-58)*(down.view.maxLat-down.view.minLat);
+          view={minLon:down.view.minLon-sx,maxLon:down.view.maxLon-sx,minLat:down.view.minLat+sy,maxLat:down.view.maxLat+sy};
+          render();
+        }
+      } else canvas.style.cursor=nearestRecord(event.offsetX,event.offsetY,canvas)?'pointer':'crosshair';
+    });
+    canvas.addEventListener('pointerup',event=>{if(down&&!down.moved){const found=nearestRecord(event.offsetX,event.offsetY,canvas);if(found)selectRecord(found.id);}down=null;});
+    canvas.addEventListener('wheel',event=>{
+      event.preventDefault();
+      const factor=event.deltaY<0 ? .8 : 1.25;
+      const spanLon=view.maxLon-view.minLon,spanLat=view.maxLat-view.minLat;
+      if(spanLon*factor<5||spanLon*factor>300) return;
+      const fx=Math.max(0,Math.min(1,(event.offsetX-52)/(canvas.clientWidth-75)));
+      const fy=Math.max(0,Math.min(1,(event.offsetY-17)/(canvas.clientHeight-58)));
+      const centerLon=view.minLon+fx*spanLon,centerLat=view.maxLat-fy*spanLat;
+      const nextLon=spanLon*factor,nextLat=spanLat*factor;
+      view={minLon:centerLon-fx*nextLon,maxLon:centerLon+(1-fx)*nextLon,
+        minLat:centerLat-(1-fy)*nextLat,maxLat:centerLat+fy*nextLat};
+      render();
+    },{passive:false});
+  }
+  new ResizeObserver(()=>render()).observe($('oldMap'));
+  new ResizeObserver(()=>render()).observe($('newMap'));
+  drawCohesion();render();
+})();
+</script>
+</body>
+</html>

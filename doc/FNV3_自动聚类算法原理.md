@@ -1,6 +1,6 @@
-# FNV3 自动聚类算法原理（当前实现）
+# FNV3 自动聚类算法原理（旧版实现）
 
-本文记录当前代码的实际行为，供后续优化时对照。核心函数是 `src/lib/cluster.js` 中的 `processWPCycloneCluster(cycloneDataList, options)`；在线流程由 `src/fnv3download_csv.js` 在解析 cyclogenesis CSV 后调用，离线示例入口是 `src/process_fnv3_wp.js`。在线流程传入基础解析结果 `processFNV3CSVData(filePath, source.ins).data`，并把增强聚类结果写入数据库。
+本文记录旧版算法的实际行为，供优化和回退时对照。旧实现已移至 `src/lib/cluster_legacy.js`，核心函数仍为 `processWPCycloneCluster(cycloneDataList, options)`。默认入口 `src/lib/cluster.js` 现在使用成员编号排他算法；设置环境变量 `FNV3_CLUSTER_ALGORITHM=legacy` 可切回本文件所述的旧算法。在线流程由 `src/fnv3download_csv.js` 在解析 cyclogenesis CSV 后调用，离线示例入口是 `src/process_fnv3_wp.js`。
 
 ## 1. 输入与筛选
 
@@ -47,7 +47,7 @@ minPoints = max(2, min(baseMinPoints, N))
 
 函数同时返回 `cyclones_WP_list`、`track0_info_list`、`tracks_list`、`tracks_list_enhanced` 和 `clusterStats`。`clusterStats.clusters`、`clusterStats.noise` 分别是依赖库返回的簇数和噪声点数；增强结果中的 `stormGroups` 是输出分组数。
 
-## 5. 当前实现的边界
+## 5. 旧版实现的边界
 
 - 只比较轨迹首点的位置与 `step`，后续路径、移动方向、强度及轨迹间持续接近程度均不参与判定。相近首点的轨迹可被分在一起，即使后续路径分离。
 - `9999` 是聚合用的统一噪声编号：多个互不相近的噪声轨迹会被合成一个增强对象；它不代表 DBSCAN 识别出的风暴簇。因此输出分组数可能包含这个噪声组。
@@ -55,4 +55,4 @@ minPoints = max(2, min(baseMinPoints, N))
 - 簇编号由本次输入的处理顺序和依赖库生成，不能视作跨批次稳定的风暴标识。
 - 当所有入选轨迹均为空时，不调用聚类，也不生成分组；若同时存在非空和空轨迹，空轨迹进入 `9999` 组。
 
-实现依据：`src/lib/cluster.js`、`src/resolve.CSV_fnv3.js`、`src/fnv3download_csv.js`，以及已安装的 `node_modules/sdbscan/main.js`、`distance.js`。
+实现依据：`src/lib/cluster_legacy.js`、`src/resolve.CSV_fnv3.js`、`src/fnv3download_csv.js`，以及已安装的 `node_modules/sdbscan/main.js`、`distance.js`。
