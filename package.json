@@ -6,6 +6,7 @@
   "author": "minhill",
   "license": "MIT",
   "dependencies": {
+    "bson": "^1.1.5",
     "cheerio": "^1.0.0-rc.3",
     "dayjs": "^1.8.34",
     "glob": "^7.1.6",
@@ -18,6 +19,10 @@
     "sdbscan": "^0.3.3"
   },
   "scripts": {
-    "buildDoc": "jsdoc -c jsdoc.json"
+    "buildDoc": "jsdoc -c jsdoc.json",
+    "recluster:fnv3-history": "node scripts/recluster-fnv3-history.js",
+    "test:fnv3-history": "node --test test/fnv3_history_recluster.test.js",
+    "recluster:aifs-history": "node scripts/recluster-aifs-history.js",
+    "test:aifs-history": "node --test test/aifs_cluster.test.js test/aifs_history_recluster.test.js test/aifs_download.test.js"
   }
 }

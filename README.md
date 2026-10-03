@@ -2,6 +2,8 @@
 
 从RUC网站获取数值模式预报报文
 
+FNV3 系列数据库历史重聚类回算（`fnv3-gen`、`WNV3`、`fnv3`，2026-09-28 UTC 之前）：见 [使用说明](doc/fnv3_history_recluster.md)。
+
 
 # 台风集合预报持续偏转台风的统计特征分析
 

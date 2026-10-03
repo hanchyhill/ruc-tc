@@ -4,6 +4,8 @@ dayjs.extend(utc);
 const fs = require('fs');
 const path = require('path');
 const {get_aifs, trans_aifs_to_mongo_format} = require('./lib/get_aifs.js');
+const { reclusterCycle } = require('./aifs_history_recluster');
+const mongoose = require('mongoose');
 const schedule = require('node-schedule');
 const {connect, initSchemas} = require('./db/initDB.js');
 const process = require('process');
@@ -72,7 +74,7 @@ async function downloadData(date, area = "WesternPacific") {
         const timeStr = date.format('YYYYMMDDHH');
         const filename = `AIFS_${timeStr}_${area}.json`;
 
-        // Check if file already exists
+        // Keep the original file-based download check, independent of cyclone numbering.
         if (checkFileExists(filename, timeStr, "ensemble")) {
             console.log(`File ${filename} already exists for ${timeStr}, skipping download`);
             return null;
@@ -88,7 +90,10 @@ async function downloadData(date, area = "WesternPacific") {
         // console.log(`Raw data saved: ${filePath}`);
 
         // Convert to MongoDB format
-        const processedData = trans_aifs_to_mongo_format(rawData);
+        const convertedData = trans_aifs_to_mongo_format(rawData);
+        const disturbances = convertedData.filter(item => item.basinShort2 === 'WP' &&
+            String(item.cycloneNumber || '').startsWith('IC'));
+        const processedData = convertedData.filter(item => !disturbances.includes(item));
         console.log(`Successfully converted ${processedData.length} typhoon data records`);
 
         // Save to database
@@ -97,6 +102,21 @@ async function downloadData(date, area = "WesternPacific") {
                 console.error(`Failed to save data to database:`, err.message);
                 throw err;
             });
+        }
+
+        if (disturbances.length) {
+            const source = disturbances[0];
+            const collection = mongoose.connection.db.collection('cyclones');
+            // Replace and verify every cluster, including equal/shrinking member counts;
+            // remove stale C-* and IC* only after the new snapshot is safely persisted.
+            await reclusterCycle(collection, new Date(source.initTime), source.ins, {
+                apply: true,
+                sourceRecords: disturbances,
+                backupDir: path.join(BASE_DIR, 'recluster_backups'),
+            });
+            const clusters = await collection.find({ ins: source.ins, basinShort2: 'WP',
+                initTime: new Date(source.initTime), cycloneNumber: /^C-\d+$/ }).toArray();
+            processedData.push(...clusters);
         }
 
         return processedData;
@@ -195,6 +215,8 @@ async function initDB() {
 }
 
 // Start application
-initDB().catch(err => {
+if (require.main === module) initDB().catch(err => {
     console.trace(err);
 });
+
+module.exports = { downloadData };
