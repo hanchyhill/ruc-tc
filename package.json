@@ -20,6 +20,7 @@
   },
   "scripts": {
     "buildDoc": "jsdoc -c jsdoc.json",
+    "test:emc": "node --test test/emc_download.test.js",
     "recluster:fnv3-history": "node scripts/recluster-fnv3-history.js",
     "test:fnv3-history": "node --test test/fnv3_history_recluster.test.js",
     "recluster:aifs-history": "node scripts/recluster-aifs-history.js",

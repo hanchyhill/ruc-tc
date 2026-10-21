@@ -90,7 +90,7 @@ function trimDuplicateTime(trackList = [{ step: 0 }]) {
 function splitBul(str = '') {
   let lines = str.split('\n').filter(txt => txt.includes(','));
   // console.log(lines);
-  if (lines.length === 0) return new Error('empety');
+  if (lines.length === 0) return [];
   let newLines = lines.
     map(line => line.split(',')).
     map(line => line.map(cell => cell.trim()));
